@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Icon Click Game User Manual</title>
+  <title>Icon Click Game ユーザーマニュアル / User Manual</title>
   <style>
     body {
       font-family: sans-serif;
@@ -20,6 +20,21 @@
     section {
       margin-bottom: 30px;
     }
+    .manual-section {
+      border: 1px solid #ddd;
+      padding: 15px;
+      border-radius: 5px;
+      background-color: #fff;
+      margin-bottom: 30px;
+    }
+    .lang-title {
+      background: #eee;
+      padding: 5px 10px;
+      border-radius: 3px;
+      display: inline-block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
     ol, ul {
       margin-left: 20px;
     }
@@ -32,83 +47,143 @@
   </style>
 </head>
 <body>
-  <h1>Icon Click Game User Manual</h1>
+  <h1>Icon Click Game ユーザーマニュアル / User Manual</h1>
+  <p><strong>URL:</strong> <a href="https://uxkys.github.io/reserch/task/iconclick/iconclick" target="_blank">https://uxkys.github.io/reserch/task/iconclick/iconclick</a></p>
   
-  <section>
-    <h2>Game Overview</h2>
-    <p><strong>Game Name:</strong> Shape Puzzle Game (Icon Click Game)</p>
-    <p><strong>URL:</strong> <a href="https://uxkys.github.io/reserch/iconclick" target="_blank">https://uxkys.github.io/reserch/iconclick</a></p>
-    <p><strong>Objective:</strong> Identify the shape that appears most frequently among randomly placed shapes and click the corresponding icon button at the bottom to advance to the next level.</p>
-    <p><strong>Session Duration:</strong> 3 minutes</p>
-    <p><strong>Total Levels:</strong> 200</p>
-  </section>
+  <div class="manual-section">
+    <div class="lang-title">日本語版</div>
+    <section>
+      <h2>ゲーム概要</h2>
+      <p><strong>ゲーム名:</strong> Shape Puzzle Game (Icon Click Game)</p>
+      <p><strong>目的:</strong> 画面上に配置された複数の図形の中から、最も多く出現している図形を識別し、下部の対応するボタンをクリックして次のレベルへ進む。</p>
+      <p><strong>セッション時間:</strong> 3分</p>
+      <p><strong>総レベル数:</strong> 200面</p>
+    </section>
+    
+    <section>
+      <h2>ゲームの使い方</h2>
+      <h3>1. ゲーム開始方法</h3>
+      <ol>
+        <li>
+          ブラウザで <strong>index.html</strong> を開き、表示されるリンク「Go to Icon Click Game」をクリックして、ゲームページ（上記 URL）に遷移します。
+        </li>
+        <li>
+          ゲームページ中央に表示される <strong>Start</strong> ボタンをクリックすると、3分間のセッションが開始され、レベル1の問題が自動的に表示されます。
+        </li>
+      </ol>
+      
+      <h3>2. ゲームプレイ方法</h3>
+      <ul>
+        <li>各レベルは、画面上に重ならずに配置された12個の図形で構成されています。</li>
+        <li>その中で、ある1種類の図形が最も多く表示されており、これが正解です。</li>
+        <li>
+          画面上の各図形をクリックすると、指定の変換が行われます（例: ▲ → △、■ → □、● → ○、★ → ☆）。  
+          一度クリックした図形は再クリック不可で、下部のカウンターがインクリメントされます。
+        </li>
+        <li>
+          画面下部には、4種類のアイコンボタン（順番: ●, ▲, ■, ★）が表示されており、正解の図形に対応するボタンをクリックすると、そのレベルがクリアされ、次のレベルへ進みます。
+        </li>
+        <li>
+          不正解のボタンをクリックした場合は「Incorrect!」のアラートが表示されます。
+        </li>
+      </ul>
+      
+      <h3>3. レベル進行と難易度</h3>
+      <ul>
+        <li>レベルは1から200まで進行し、各レベルクリア後に自動的に次のレベルへ移行します。</li>
+        <li>
+          難易度は、レベルが上がるにつれて正解となる図形の数が減少し（レベル1では5個、レベル200では3個）、全体の図形数の差が縮まることで、どの図形が最多か判断しにくくなります。
+        </li>
+      </ul>
+      
+      <h3>4. セッション終了とデータ出力</h3>
+      <ul>
+        <li>セッションは3分経過またはレベル200クリア時に終了します。</li>
+        <li>
+          セッション終了後、画面右下に「Download CSV」ボタンが表示されます。  
+          このボタンをクリックすると、プレイ数、セッション開始・終了時刻、各レベルのクリア時間が記録されたCSVファイルをダウンロードできます。
+        </li>
+      </ul>
+    </section>
+    
+    <section>
+      <h2>注意事項</h2>
+      <ul>
+        <li>一度クリックして変化した図形は再度クリックできません。</li>
+        <li>セッションは3分間の制限時間内に進行するため、迅速な判断と操作が求められます。</li>
+        <li>各レベルのクリア時間が記録され、後からプレイ傾向を確認できます。</li>
+      </ul>
+    </section>
+  </div>
   
-  <section>
-    <h2>How to Play</h2>
+  <div class="manual-section">
+    <div class="lang-title">English Version</div>
+    <section>
+      <h2>Game Overview</h2>
+      <p><strong>Game Name:</strong> Shape Puzzle Game (Icon Click Game)</p>
+      <p><strong>Objective:</strong> Identify the shape that appears most frequently among the randomly placed shapes on the screen, and click the corresponding icon button at the bottom to advance to the next level.</p>
+      <p><strong>Session Duration:</strong> 3 minutes</p>
+      <p><strong>Total Levels:</strong> 200</p>
+    </section>
     
-    <h3>Starting the Game</h3>
-    <ol>
-      <li>
-        Open <strong>index.html</strong> in your browser. Click the link on that page to navigate to the Icon Click Game page.
-      </li>
-      <li>
-        On the game page, click the <strong>Start</strong> button displayed at the center. This will start a 3-minute session beginning at Level 1.
-      </li>
-    </ol>
+    <section>
+      <h2>How to Play</h2>
+      <h3>1. Starting the Game</h3>
+      <ol>
+        <li>
+          Open <strong>index.html</strong> in your browser. Click the link "Go to Icon Click Game" to navigate to the game page at the URL provided above.
+        </li>
+        <li>
+          Click the <strong>Start</strong> button displayed in the center of the game page. This will start a 3-minute session beginning at Level 1.
+        </li>
+      </ol>
+      
+      <h3>2. Gameplay</h3>
+      <ul>
+        <li>Each level consists of 12 shapes placed randomly on the screen without overlapping.</li>
+        <li>
+          One type of shape appears most frequently, and that is the correct answer for the level.
+        </li>
+        <li>
+          Clicking on a shape will change it as specified (e.g., ▲ becomes △, ■ becomes □, ● becomes ○, ★ becomes ☆).  
+          Once clicked, a shape cannot be clicked again, and the corresponding counter below the icon button will increment.
+        </li>
+        <li>
+          At the bottom of the screen, there are four icon buttons in the following order: ●, ▲, ■, ★.  
+          Click the button corresponding to the correct shape to clear the level and proceed to the next level.
+        </li>
+        <li>
+          If you click an incorrect button, an alert saying "Incorrect!" will be displayed.
+        </li>
+      </ul>
+      
+      <h3>3. Level Progression &amp; Difficulty</h3>
+      <ul>
+        <li>The levels progress automatically from Level 1 to Level 200 as you clear each level.</li>
+        <li>
+          The difficulty increases over levels by reducing the number of the correct shape (Level 1: 5 correct shapes, Level 200: 3 correct shapes), making it harder to determine which shape appears most frequently.
+        </li>
+      </ul>
+      
+      <h3>4. Session End &amp; Data Download</h3>
+      <ul>
+        <li>The session ends when 3 minutes have elapsed or when Level 200 is cleared.</li>
+        <li>
+          After the session ends, a "Download CSV" button will appear at the bottom right.  
+          Click this button to download a CSV file containing your play data (play count, session start/end times, and clear time for each level).
+        </li>
+      </ul>
+    </section>
     
-    <h3>Gameplay</h3>
-    <ul>
-      <li>
-        Each level consists of 12 shapes randomly placed on the screen without overlapping.
-      </li>
-      <li>
-        One shape type appears most frequently (this is the correct answer for that level).
-      </li>
-      <li>
-        Clicking a shape will change it (e.g., ▲ becomes △, ■ becomes □, ● becomes ○, ★ becomes ☆) and increase the click counter displayed under the corresponding button. A shape, once clicked, cannot be clicked again.
-      </li>
-      <li>
-        At the bottom, there are four icon buttons in the following order: ●, ▲, ■, ★. Click the button corresponding to the correct shape to clear the level and move on.
-      </li>
-      <li>
-        If an incorrect button is clicked, an alert ("Incorrect!") will be shown, and you must try again.
-      </li>
-    </ul>
-    
-    <h3>Level Progression &amp; Difficulty</h3>
-    <ul>
-      <li>
-        Levels progress automatically from Level 1 to Level 200 as you clear each level.
-      </li>
-      <li>
-        The difficulty increases over levels by reducing the number of the correct shape. Specifically, Level 1 has 5 correct shapes, and Level 200 has 3 correct shapes, making it harder to determine which shape appears most frequently.
-      </li>
-    </ul>
-    
-    <h3>Session End &amp; Data Download</h3>
-    <ul>
-      <li>
-        The session ends when 3 minutes have elapsed or when you clear Level 200.
-      </li>
-      <li>
-        Upon session end, a "Download CSV" button appears at the bottom right. Clicking this button downloads a CSV file containing your play data (play count, session start/end times, and clear time for each level).
-      </li>
-    </ul>
-  </section>
+    <section>
+      <h2>Additional Notes</h2>
+      <ul>
+        <li>Once a shape is clicked and changed, it cannot be clicked again.</li>
+        <li>Quick decision-making is essential as the session is limited to 3 minutes.</li>
+        <li>Your clear time for each level is recorded so that you can review your performance later.</li>
+      </ul>
+    </section>
+  </div>
   
-  <section>
-    <h2>Additional Notes</h2>
-    <ul>
-      <li>
-        Once a shape has been clicked and changed, it cannot be clicked again.
-      </li>
-      <li>
-        Quick decision-making is essential as the session is limited to 3 minutes.
-      </li>
-      <li>
-        Your performance data for each level is recorded, allowing you to review your playing trends.
-      </li>
-    </ul>
-  </section>
 </body>
 </html>
