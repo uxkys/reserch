@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Shape Puzzle Game</title>
+  <title>Shape Puzzle Game (GoodUI / BadUI Toggle)</title>
   <style>
+    /* ======== 全体レイアウト ======== */
     body {
       margin: 0;
       padding: 0;
@@ -20,49 +21,6 @@
       overflow: hidden;
       background-color: #fff;
       border-bottom: 2px solid #ccc;
-    }
-    .shape {
-      position: absolute;
-      font-size: 24px;
-      user-select: none;
-      cursor: pointer;
-      width: 30px;
-      height: 30px;
-      line-height: 30px;
-      text-align: center;
-    }
-    #button-container {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      padding: 10px;
-      background-color: #ddd;
-    }
-    .btn-wrapper {
-      text-align: center;
-      flex: 1;
-    }
-    .btn-wrapper button {
-      display: block;
-      margin: 0 auto;
-      width: 40px;
-      height: 40px;
-      line-height: 40px;
-      text-align: center;
-      cursor: pointer;
-      border: none;
-      background: none;
-      font-size: 32px;
-    }
-    /* ▲ and ★: override font-size to 24px */
-    .btn-wrapper[data-shape="▲"] button,
-    .btn-wrapper[data-shape="★"] button {
-      font-size: 24px;
-    }
-    .count {
-      margin-top: 5px;
-      font-size: 18px;
-      color: #333;
     }
     #level-display, #timer-display {
       position: absolute;
@@ -99,237 +57,590 @@
       cursor: pointer;
       display: none;
     }
+
+    /* ======== 従来のボタンコンテナ ======== */
+    #button-container {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 10px;
+      background-color: #ddd;
+    }
+    .btn-wrapper {
+      text-align: center;
+      flex: 1;
+    }
+    .btn-wrapper button {
+      display: block;
+      margin: 0 auto;
+      width: 40px;
+      height: 40px;
+      line-height: 40px;
+      text-align: center;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-size: 32px;
+    }
+    .btn-wrapper[data-shape="▲"] button,
+    .btn-wrapper[data-shape="★"] button {
+      font-size: 24px; /* ▲と★は24px */
+    }
+    .count {
+      margin-top: 5px;
+      font-size: 18px;
+      color: #333;
+    }
+    .shape {
+      position: absolute;
+      font-size: 24px;
+      user-select: none;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+    }
+
+    /* ======== ハンバーガーメニュー ======== */
+    #hamburger-menu {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1200;
+      font-size: 24px;
+      background: rgba(255,255,255,0.7);
+      border: none;
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      text-align: center;
+    }
+    #menu-panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 200px;
+      background: #aaa;
+      color: #fff;
+      padding: 10px;
+      transform: translateX(-220px); /* 初期は左に隠す */
+      transition: transform 0.3s ease;
+      z-index: 1300;
+      height: 100vh;
+    }
+    #menu-panel.open {
+      transform: translateX(0);
+    }
+    #toggle-ui-btn {
+      display: block;
+      margin: 20px auto;
+      width: 40px;
+      height: 40px;
+      background: #666;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* ======== モーダル (BadUI) ======== */
+    #modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+    #modal-content {
+      background: #fff;
+      padding: 20px;
+      min-width: 200px;
+      border-radius: 8px;
+      text-align: center;
+      position: relative;
+    }
+    #modal-content h2 {
+      margin-top: 0;
+    }
+    .badui-shape-btn {
+      margin: 10px;
+      cursor: pointer;
+      background: none;
+      border: 1px solid #999;
+      padding: 5px 10px;
+    }
+    #confirm-container {
+      margin-top: 10px;
+    }
+    .confirm-btn {
+      margin: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+      border: 1px solid #999;
+      background: #eee;
+    }
+    .highlight {
+      background: green;
+      color: #fff;
+    }
+    /* ボタンサイズ (BadUI) */
+    .font16 {
+      font-size: 16px;
+    }
+    .font12 {
+      font-size: 12px;
+    }
   </style>
 </head>
 <body>
-  <!-- Start Button -->
-  <button id="start-btn">Start</button>
-  
-  <div id="game-container">
-    <div id="level-display"></div>
-    <div id="timer-display"></div>
+
+<!-- ハンバーガーメニュー（左上） -->
+<button id="hamburger-menu">
+  &#9776; <!-- 三本線アイコン -->
+</button>
+
+<!-- メニュー展開パネル -->
+<div id="menu-panel">
+  <button id="toggle-ui-btn"></button>
+</div>
+
+<!-- Start Button -->
+<button id="start-btn">Start</button>
+
+<div id="game-container">
+  <div id="level-display"></div>
+  <div id="timer-display"></div>
+</div>
+
+<!-- GoodUIボタンのコンテナ -->
+<div id="button-container">
+  <!-- Order: ●, ▲, ■, ★ -->
+  <div class="btn-wrapper" data-shape="●">
+    <button data-shape="●">●</button>
+    <div class="count">0</div>
   </div>
-  <div id="button-container">
-    <!-- Order: ●, ▲, ■, ★ -->
-    <div class="btn-wrapper" data-shape="●">
-      <button data-shape="●">●</button>
-      <div class="count">0</div>
-    </div>
-    <div class="btn-wrapper" data-shape="▲">
-      <button data-shape="▲">▲</button>
-      <div class="count">0</div>
-    </div>
-    <div class="btn-wrapper" data-shape="■">
-      <button data-shape="■">■</button>
-      <div class="count">0</div>
-    </div>
-    <div class="btn-wrapper" data-shape="★">
-      <button data-shape="★">★</button>
-      <div class="count">0</div>
+  <div class="btn-wrapper" data-shape="▲">
+    <button data-shape="▲">▲</button>
+    <div class="count">0</div>
+  </div>
+  <div class="btn-wrapper" data-shape="■">
+    <button data-shape="■">■</button>
+    <div class="count">0</div>
+  </div>
+  <div class="btn-wrapper" data-shape="★">
+    <button data-shape="★">★</button>
+    <div class="count">0</div>
+  </div>
+</div>
+
+<!-- BadUI用: 「回答する」ボタン（GoodUIでは非表示にする） -->
+<div id="badui-answer-button-container" style="display:none; text-align:center; padding:10px; background:#ddd;">
+  <button id="answer-btn" style="padding:10px 20px; cursor:pointer;">回答する</button>
+</div>
+
+<!-- モーダル: BadUIで形ボタンを選ばせる -->
+<div id="modal-overlay">
+  <div id="modal-content">
+    <h2>どの形を選びますか？</h2>
+    <div id="badui-shape-container"></div>
+    <div id="confirm-container" style="display:none;">
+      <p>この回答でよろしいですか？</p>
+      <button class="confirm-btn" data-choice="yes">Yes</button>
+      <button class="confirm-btn" data-choice="no">No</button>
     </div>
   </div>
-  <button id="csv-download-btn">Download CSV</button>
+</div>
 
-  <script>
-    const shapes = ["■", "▲", "●", "★"];
-    const transformMap = {
-      "▲": "△",
-      "■": "□",
-      "●": "○",
-      "★": "☆"
-    };
-    const totalLevels = 200;
-    let currentLevel = 1;
-    let correctShape = "";
-    let levelStartTime = 0;
-    let sessionActive = false;
-    let timerInterval;
-    const sessionData = {
-      playCount: 0,
-      sessionStart: null,
-      sessionEnd: null,
-      levels: []  // { level: n, clearTime: ms }
-    };
-    let countClicks = { "■": 0, "▲": 0, "●": 0, "★": 0 };
+<button id="csv-download-btn">Download CSV</button>
 
-    const gameContainer = document.getElementById('game-container');
-    const levelDisplay = document.getElementById('level-display');
-    const timerDisplay = document.getElementById('timer-display');
-    const startBtn = document.getElementById('start-btn');
-    const csvDownloadBtn = document.getElementById('csv-download-btn');
-    const buttons = document.querySelectorAll('#button-container button');
+<script>
+  /* ================================
+     グローバル変数や設定
+  =================================*/
+  const shapes = ["■", "▲", "●", "★"];
+  const transformMap = {
+    "▲": "△",
+    "■": "□",
+    "●": "○",
+    "★": "☆"
+  };
+  const totalLevels = 200;
+  let currentLevel = 1;
+  let correctShape = "";
+  let levelStartTime = 0;
+  let sessionActive = false;
+  let timerInterval;
+  let isBadUI = false; // 現在のUIモード(false = GoodUI, true = BadUI)
 
-    startBtn.addEventListener('click', () => {
-      startBtn.style.display = 'none';
-      sessionActive = true;
-      sessionData.playCount++;
-      sessionData.sessionStart = new Date();
-      startTimer(3 * 60);
-      currentLevel = 1;
-      startPuzzle();
-    });
+  // CSV出力用
+  const sessionData = {
+    playCount: 0,
+    sessionStart: null,
+    sessionEnd: null,
+    levels: []  // { level: n, clearTime: ms, mode: "GoodUI" or "BadUI" }
+  };
 
-    function startTimer(seconds) {
-      let remaining = seconds;
-      updateTimerDisplay(remaining);
-      timerInterval = setInterval(() => {
-        remaining--;
-        updateTimerDisplay(remaining);
-        if (remaining <= 0) {
-          clearInterval(timerInterval);
-          endSession();
-        }
-      }, 1000);
-    }
+  let countClicks = { "■": 0, "▲": 0, "●": 0, "★": 0 };
 
-    function updateTimerDisplay(seconds) {
-      const min = Math.floor(seconds / 60);
-      const sec = seconds % 60;
-      timerDisplay.textContent = `Remaining: ${min}:${sec < 10 ? '0' : ''}${sec}`;
-    }
+  /* DOM要素の取得 */
+  const gameContainer = document.getElementById('game-container');
+  const levelDisplay = document.getElementById('level-display');
+  const timerDisplay = document.getElementById('timer-display');
+  const startBtn = document.getElementById('start-btn');
+  const csvDownloadBtn = document.getElementById('csv-download-btn');
+  const buttons = document.querySelectorAll('#button-container button');
+  const hamburgerMenuBtn = document.getElementById('hamburger-menu');
+  const menuPanel = document.getElementById('menu-panel');
+  const toggleUIBtn = document.getElementById('toggle-ui-btn');
+  const baduiAnswerContainer = document.getElementById('badui-answer-button-container');
+  const answerBtn = document.getElementById('answer-btn');
 
-    function startPuzzle() {
+  // モーダル関連
+  const modalOverlay = document.getElementById('modal-overlay');
+  const modalContent = document.getElementById('modal-content');
+  const baduiShapeContainer = document.getElementById('badui-shape-container');
+  const confirmContainer = document.getElementById('confirm-container');
+
+  /* ================================
+     イベントリスナー
+  =================================*/
+
+  // 実験スタートボタン
+  startBtn.addEventListener('click', () => {
+    startBtn.style.display = 'none';
+    sessionActive = true;
+    sessionData.playCount++;
+    sessionData.sessionStart = new Date();
+    startTimer(3 * 60);
+    currentLevel = 1;
+    startPuzzle();
+  });
+
+  // GoodUIボタン（従来の4つの形）をクリックした場合
+  buttons.forEach(button => {
+    button.addEventListener('click', () => {
       if (!sessionActive) return;
-      gameContainer.querySelectorAll('.shape').forEach(el => el.remove());
-      countClicks = { "■": 0, "▲": 0, "●": 0, "★": 0 };
-      document.querySelectorAll('.count').forEach(el => el.textContent = '0');
-      
-      levelDisplay.textContent = `Level ${currentLevel} / ${totalLevels}`;
-      levelStartTime = Date.now();
+      if (isBadUI) {
+        // BadUIのときは、このボタン自体は操作させない(隠している想定)
+        return;
+      }
+      const selectedShape = button.getAttribute('data-shape');
+      processShapeSelection(selectedShape);
+    });
+  });
 
-      // Total shapes is fixed to 12.
-      const totalShapes = 12;
-      const targetIndex = Math.floor(Math.random() * shapes.length);
-      correctShape = shapes[targetIndex];
+  // 回答するボタン(BadUI用)
+  answerBtn.addEventListener('click', () => {
+    if (!sessionActive) return;
+    // モーダルを出して、形ボタンをランダムに並べる
+    openBadUIModal();
+  });
 
-      // Adjust difficulty: Level 1: 5 correct shapes, Level 200: 3 correct shapes.
-      const T = Math.round(5 - (currentLevel - 1) * 2 / (totalLevels - 1));
+  // ハンバーガーメニューのトグル
+  hamburgerMenuBtn.addEventListener('click', () => {
+    menuPanel.classList.toggle('open');
+  });
 
-      const counts = {};
-      counts[correctShape] = T;
-      const remainder = totalShapes - T;
-      const base = Math.floor(remainder / 3);
-      let extra = remainder % 3;
-      shapes.forEach(shape => {
-        if (shape === correctShape) return;
-        let cnt = base;
-        if (extra > 0) {
-          cnt++;
-          extra--;
-        }
-        counts[shape] = Math.max(cnt, 1);
+  // UI切り替えボタン (ハンバーガーパネル内)
+  toggleUIBtn.addEventListener('click', () => {
+    isBadUI = !isBadUI;
+    updateUIVisibility();
+  });
+
+  // ダウンロードボタン
+  csvDownloadBtn.addEventListener('click', () => {
+    const csvContent = generateCSV();
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `session_${sessionData.sessionStart.toISOString()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  /* ================================
+     タイマー処理
+  =================================*/
+  function startTimer(seconds) {
+    let remaining = seconds;
+    updateTimerDisplay(remaining);
+    timerInterval = setInterval(() => {
+      remaining--;
+      updateTimerDisplay(remaining);
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        endSession();
+      }
+    }, 1000);
+  }
+
+  function updateTimerDisplay(seconds) {
+    const min = Math.floor(seconds / 60);
+    const sec = seconds % 60;
+    timerDisplay.textContent = `Remaining: ${min}:${sec < 10 ? '0' : ''}${sec}`;
+  }
+
+  /* ================================
+     Puzzle開始（レベル生成）
+  =================================*/
+  function startPuzzle() {
+    if (!sessionActive) return;
+    // 画面上の図形を一旦消す
+    gameContainer.querySelectorAll('.shape').forEach(el => el.remove());
+    // クリックカウントをリセット
+    countClicks = { "■": 0, "▲": 0, "●": 0, "★": 0 };
+    document.querySelectorAll('.count').forEach(el => el.textContent = '0');
+
+    levelDisplay.textContent = `Level ${currentLevel} / ${totalLevels}`;
+    levelStartTime = Date.now();
+
+    // レベル毎に正解形をランダム選択
+    const targetIndex = Math.floor(Math.random() * shapes.length);
+    correctShape = shapes[targetIndex];
+
+    // 画面に配置する図形の数
+    const totalShapes = 12;
+
+    // レベルが上がるにつれ正解数が減る計算式 (例: 1レベル目=5, 200レベル目=3)
+    const T = Math.round(5 - (currentLevel - 1) * 2 / (totalLevels - 1));
+
+    // 各図形の個数カウントを設定
+    const counts = {};
+    counts[correctShape] = T;
+    const remainder = totalShapes - T;
+    const base = Math.floor(remainder / 3);
+    let extra = remainder % 3;
+    shapes.forEach(shape => {
+      if (shape === correctShape) return;
+      let cnt = base;
+      if (extra > 0) {
+        cnt++;
+        extra--;
+      }
+      counts[shape] = Math.max(cnt, 1);
+    });
+
+    // ランダム配置
+    const placedPositions = [];
+    const shapeSize = 30;
+    const containerWidth = gameContainer.clientWidth;
+    const containerHeight = gameContainer.clientHeight;
+
+    Object.keys(counts).forEach(shape => {
+      for (let i = 0; i < counts[shape]; i++) {
+        const el = document.createElement('div');
+        el.classList.add('shape');
+        el.textContent = shape;
+        el.dataset.original = shape;
+        el.dataset.clicked = "false";
+
+        let pos;
+        let attempts = 0;
+        do {
+          const x = getRandomInt(0, containerWidth - shapeSize);
+          const y = getRandomInt(0, containerHeight - shapeSize);
+          pos = {x, y, width: shapeSize, height: shapeSize};
+          attempts++;
+        } while (checkOverlap(pos, placedPositions) && attempts < 100);
+
+        placedPositions.push(pos);
+        el.style.left = pos.x + 'px';
+        el.style.top = pos.y + 'px';
+        el.addEventListener('click', shapeClickHandler);
+        gameContainer.appendChild(el);
+      }
+    });
+
+    // UIモードに合わせてボタンを表示/非表示
+    updateUIVisibility();
+  }
+
+  /* ================================
+     UIモード切り替えによるボタン表示/非表示
+  =================================*/
+  function updateUIVisibility() {
+    // GoodUI: #button-container を表示、 #badui-answer-button-container を非表示
+    // BadUI:  #button-container を非表示、 #badui-answer-button-container を表示
+    if (isBadUI) {
+      document.getElementById('button-container').style.display = 'none';
+      baduiAnswerContainer.style.display = 'block';
+    } else {
+      document.getElementById('button-container').style.display = 'flex';
+      baduiAnswerContainer.style.display = 'none';
+    }
+  }
+
+  /* ================================
+     図形クリック時（GoodUI）
+  =================================*/
+  function shapeClickHandler(event) {
+    // GoodUIの場合のみ有効
+    if (!sessionActive || isBadUI) return;
+
+    const el = event.currentTarget;
+    if (el.dataset.clicked === "true") return;
+    const originalShape = el.dataset.original;
+    if (transformMap[originalShape]) {
+      el.textContent = transformMap[originalShape];
+      el.dataset.clicked = "true";
+      countClicks[originalShape]++;
+      updateCountDisplay(originalShape);
+    }
+  }
+
+  function updateCountDisplay(shape) {
+    const wrapper = document.querySelector(`.btn-wrapper[data-shape="${shape}"] .count`);
+    if (wrapper) {
+      wrapper.textContent = countClicks[shape];
+    }
+  }
+
+  /* ================================
+     BadUI: モーダルでランダムな形ボタンを提示
+  =================================*/
+  function openBadUIModal() {
+    // 形ボタンをランダム順で表示
+    const shapeArray = shuffleArray([...shapes]);
+    baduiShapeContainer.innerHTML = ''; // 一旦クリア
+
+    shapeArray.forEach(s => {
+      const btn = document.createElement('button');
+      btn.classList.add('badui-shape-btn');
+      // フォントサイズ指定
+      if (s === "●" || s === "■") {
+        btn.classList.add('font16'); // 16px
+      } else {
+        btn.classList.add('font12'); // 12px
+      }
+      btn.textContent = s;
+      btn.addEventListener('click', () => {
+        // 形を一旦選択 → 次はYes/No確認を表示
+        showConfirmUI(s);
       });
+      baduiShapeContainer.appendChild(btn);
+    });
 
-      const placedPositions = [];
-      const shapeSize = 30;
-      const containerWidth = gameContainer.clientWidth;
-      const containerHeight = gameContainer.clientHeight;
+    confirmContainer.style.display = 'none';
+    modalOverlay.style.display = 'flex';
+  }
 
-      Object.keys(counts).forEach(shape => {
-        for (let i = 0; i < counts[shape]; i++) {
-          const el = document.createElement('div');
-          el.classList.add('shape');
-          el.textContent = shape;
-          el.dataset.original = shape;
-          el.dataset.clicked = "false";
-          let pos;
-          let attempts = 0;
-          do {
-            const x = getRandomInt(0, containerWidth - shapeSize);
-            const y = getRandomInt(0, containerHeight - shapeSize);
-            pos = {x, y, width: shapeSize, height: shapeSize};
-            attempts++;
-          } while (checkOverlap(pos, placedPositions) && attempts < 100);
-          placedPositions.push(pos);
-          el.style.left = pos.x + 'px';
-          el.style.top = pos.y + 'px';
-          el.addEventListener('click', shapeClickHandler);
-          gameContainer.appendChild(el);
-        }
-      });
-    }
+  function showConfirmUI(selectedShape) {
+    // shapeボタンを非活性にしておく
+    [...baduiShapeContainer.querySelectorAll('button')].forEach(b => {
+      b.disabled = true;
+    });
+    confirmContainer.style.display = 'block';
 
-    function checkOverlap(pos, placed) {
-      for (let other of placed) {
-        if (pos.x < other.x + other.width &&
-            pos.x + pos.width > other.x &&
-            pos.y < other.y + other.height &&
-            pos.y + pos.height > other.y) {
-          return true;
-        }
-      }
-      return false;
-    }
+    // Yes/Noボタンをランダムに並び替え
+    const confirmBtns = confirmContainer.querySelectorAll('.confirm-btn');
+    const arrayBtns = Array.from(confirmBtns);
+    shuffleArray(arrayBtns);
 
-    function shapeClickHandler(event) {
-      const el = event.currentTarget;
-      if (el.dataset.clicked === "true") return;
-      const originalShape = el.dataset.original;
-      if (transformMap[originalShape]) {
-        el.textContent = transformMap[originalShape];
-        el.dataset.clicked = "true";
-        countClicks[originalShape]++;
-        updateCountDisplay(originalShape);
-      }
-    }
+    confirmContainer.appendChild(arrayBtns[0]);
+    confirmContainer.appendChild(arrayBtns[1]);
 
-    function updateCountDisplay(shape) {
-      const wrapper = document.querySelector(`.btn-wrapper[data-shape="${shape}"] .count`);
-      if (wrapper) {
-        wrapper.textContent = countClicks[shape];
-      }
-    }
+    // どちらか一方を highlight ランダム
+    arrayBtns.forEach(b => b.classList.remove('highlight'));
+    const randomIndex = Math.floor(Math.random() * 2);
+    arrayBtns[randomIndex].classList.add('highlight');
 
-    function getRandomInt(min, max) {
-      return Math.floor(Math.random() * (max - min)) + min;
-    }
-
-    buttons.forEach(button => {
-      button.addEventListener('click', () => {
-        if (!sessionActive) return;
-        const selectedShape = button.getAttribute('data-shape');
-        if (selectedShape === correctShape) {
-          const clearTime = Date.now() - levelStartTime;
-          sessionData.levels.push({ level: currentLevel, clearTime });
-          if (currentLevel < totalLevels) {
-            currentLevel++;
-            startPuzzle();
-          } else {
-            endSession();
-          }
+    // Yes/Noボタンのイベント再設定
+    arrayBtns.forEach(btn => {
+      btn.onclick = () => {
+        const choice = btn.getAttribute('data-choice');
+        if (choice === 'yes') {
+          // 最終的に選択された形を確定
+          closeModal();
+          processShapeSelection(selectedShape);
         } else {
-          alert("Incorrect!");
+          // モーダルを閉じずに、もう一度選択できるようにする
+          // → 今回はNoならモーダルを閉じて再度「回答する」ボタンを押す手間を与える
+          closeModal();
         }
-      });
+      };
     });
+  }
 
-    function endSession() {
-      sessionActive = false;
-      sessionData.sessionEnd = new Date();
-      alert("Session Ended");
-      csvDownloadBtn.style.display = 'block';
-    }
+  function closeModal() {
+    modalOverlay.style.display = 'none';
+  }
 
-    csvDownloadBtn.addEventListener('click', () => {
-      const csvContent = generateCSV();
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `session_${sessionData.sessionStart.toISOString()}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-
-    function generateCSV() {
-      let csv = "Play Count,Session Start,Session End\n";
-      csv += `${sessionData.playCount},${sessionData.sessionStart.toISOString()},${sessionData.sessionEnd.toISOString()}\n\n`;
-      csv += "Level,Clear Time (ms)\n";
-      sessionData.levels.forEach(levelData => {
-        csv += `${levelData.level},${levelData.clearTime}\n`;
+  /* ================================
+     (共通) 形の最終選択を判定
+  =================================*/
+  function processShapeSelection(selectedShape) {
+    if (!sessionActive) return;
+    // 正解かどうか
+    if (selectedShape === correctShape) {
+      const clearTime = Date.now() - levelStartTime;
+      sessionData.levels.push({
+        level: currentLevel,
+        clearTime: clearTime,
+        mode: isBadUI ? "BadUI" : "GoodUI"
       });
-      return csv;
+      if (currentLevel < totalLevels) {
+        currentLevel++;
+        startPuzzle();
+      } else {
+        endSession();
+      }
+    } else {
+      alert("Incorrect!");
     }
-  </script>
+  }
+
+  /* ================================
+     セッション終了
+  =================================*/
+  function endSession() {
+    sessionActive = false;
+    sessionData.sessionEnd = new Date();
+    alert("Session Ended");
+    csvDownloadBtn.style.display = 'block';
+  }
+
+  /* ================================
+     CSV生成
+  =================================*/
+  function generateCSV() {
+    let csv = "Play Count,Session Start,Session End\n";
+    csv += `${sessionData.playCount},${sessionData.sessionStart.toISOString()},${sessionData.sessionEnd.toISOString()}\n\n`;
+    csv += "Level,Clear Time (ms),UIMode\n";
+    sessionData.levels.forEach(levelData => {
+      csv += `${levelData.level},${levelData.clearTime},${levelData.mode}\n`;
+    });
+    return csv;
+  }
+
+  /* ================================
+     汎用ユーティリティ
+  =================================*/
+  function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
+  }
+
+  function checkOverlap(pos, placed) {
+    for (let other of placed) {
+      if (pos.x < other.x + other.width &&
+          pos.x + pos.width > other.x &&
+          pos.y < other.y + other.height &&
+          pos.y + pos.height > other.y) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function shuffleArray(array) {
+    // Fisher–Yates shuffle
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+</script>
 </body>
 </html>
