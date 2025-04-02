@@ -2,235 +2,117 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Shape Puzzle Game 使い方ガイド</title>
+  <title>Shape Puzzle Game 使い方</title>
   <style>
     body {
-      font-family: sans-serif;
-      line-height: 1.6;
-      margin: 20px;
+      margin: 0;
+      padding: 0;
       background: #f9f9f9;
+      font-family: sans-serif;
     }
     header {
       background: #333;
       color: #fff;
       padding: 16px;
+      text-align: center;
     }
     h1 {
       margin: 0;
       font-size: 24px;
     }
     main {
+      /* ここで表示領域を最大800pxに、中央寄せ */
+      max-width: 800px;
+      margin: 24px auto;
       background: #fff;
-      padding: 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      margin-top: 16px;
+      padding: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
     section {
-      margin-bottom: 32px;
+      margin-bottom: 24px;
     }
     h2 {
-      color: #333;
-      margin-top: 0;
       font-size: 18px;
       border-left: 4px solid #333;
       padding-left: 8px;
+      margin-top: 0;
     }
-    p {
-      margin: 8px 0;
+    p, li {
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 8px;
     }
-    code {
-      background: #eee;
-      padding: 2px 4px;
-      border-radius: 4px;
-    }
-    ul {
-      margin: 4px 0 16px 20px;
-    }
-    li {
-      margin-bottom: 4px;
-    }
-    .screenshot {
-      border: 1px solid #ccc;
-      margin: 8px 0;
-      display: block;
-      max-width: 320px;
-      background: #fff;
-      padding: 2px;
+    ol, ul {
+      margin: 0 0 16px 20px;
     }
     footer {
-      margin-top: 40px;
-      font-size: 14px;
+      text-align: center;
       color: #777;
+      font-size: 13px;
+      margin-top: 24px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Shape Puzzle Game 使い方ガイド</h1>
-  </header>
 
-  <main>
-    <section>
-      <h2>1. アプリケーション概要</h2>
-      <p>
-        このアプリは、画面にランダムに配置される図形を見て、正解の図形を素早く当てるパズルゲームです。
-        「GoodUI」と「BadUI」の2種類のインターフェースを切り替えながら、どちらが素早く正解を導きやすいかを比較する目的でも使用できます。
-      </p>
-      <p>
-        ゲームプレイ後は結果をCSVでダウンロードでき、クリアタイムや選択モードなどの記録を分析できます。
-      </p>
-    </section>
+<header>
+  <h1>Shape Puzzle Game 使い方ガイド</h1>
+</header>
 
-    <section>
-      <h2>2. ゲーム開始手順</h2>
-      <ol>
-        <li>
-          <strong>起動すると表示されるスタート画面</strong>にて、プレイ時間を入力します（秒単位）。
-          <br>例: <code>180</code>（3分）
-        </li>
-        <li>入力後、<strong>「Start」ボタン</strong>をクリックします。</li>
-        <li>スタート画面が消え、ゲーム画面が表示されます。</li>
-      </ol>
-      <p>
-        <img src="start-screen-example.png" alt="スタート画面のスクリーンショット" class="screenshot">
-        ※これは例示用のスクリーンショットです
-      </p>
-    </section>
+<main>
+  <section>
+    <h2>1. アプリ概要</h2>
+    <p>ランダムに配置された4種類の図形（●▲■★）のうち、正解の図形を素早く当てるゲームです。</p>
+    <p>「GoodUI / BadUI」を切り替えながら、どちらが操作しやすいか比較することも可能です。</p>
+  </section>
 
-    <section>
-      <h2>3. ゲーム画面構成</h2>
-      <ul>
-        <li>
-          <strong>画面上部</strong>：<br>
-          「Level表示」や「Remaining: XX:YY」というタイマー表示があり、
-          ここで現在のレベル数や残り時間を確認できます。
-        </li>
-        <li>
-          <strong>ゲーム領域（中央）</strong>：<br>
-          ランダムに配置された図形が表示されます。図形には「●」「▲」「■」「★」の4種類があります。
-        </li>
-        <li>
-          <strong>画面下部（グレー背景）</strong>：<br>
-          「GoodUI」モードの場合、4つの図形ボタン（●▲■★）が並びます。  
-          「BadUI」モードの場合は、ここにはボタンは表示されず、代わりに「Answer」ボタンが右上メニューから選択できるようになります（※切り替え方法は後述）。
-        </li>
-      </ul>
-      <p>
-        <img src="game-screen-example.png" alt="ゲーム画面のスクリーンショット" class="screenshot">
-      </p>
-    </section>
+  <section>
+    <h2>2. ゲーム開始</h2>
+    <ol>
+      <li>起動時に表示されるスタート画面で、プレイ時間（秒）を入力します。</li>
+      <li>「Start」ボタンをクリックすると、ゲーム画面が表示されます。</li>
+      <li>タイマーがスタートし、制限時間内にできるだけ多くのレベルをクリアしてください。</li>
+    </ol>
+  </section>
 
-    <section>
-      <h2>4. プレイ方法（GoodUIモード）</h2>
-      <ol>
-        <li>
-          画面下部のグレー帯（<code>#button-container</code>）にある4つの図形ボタンから、
-          表示されている図形のうち「正解と思う形」をクリックします。
-        </li>
-        <li>
-          正解なら画面右下に一瞬（約3秒）<strong>「⭕️」</strong>が表示され、次のレベルへ進みます。
-        </li>
-        <li>
-          不正解なら画面右下に一瞬（約3秒）<strong>「❌」</strong>が表示されます。
-          （次のレベルへは進む必要があれば引き続き同じレベルを解答できます）
-        </li>
-      </ol>
-      <p>制限時間が終わるか、全レベル（通常200レベル）をクリアするとゲーム終了となります。</p>
-    </section>
+  <section>
+    <h2>3. GoodUI モードの遊び方</h2>
+    <ul>
+      <li>画面下部のグレー帯に4つの図形ボタンが表示されます。</li>
+      <li>正解だと思う図形ボタンをクリックしてください。</li>
+      <li>正解なら右側に「⭕️」が3秒表示され、次のレベルに進みます。</li>
+      <li>不正解なら「❌」が3秒表示されます。</li>
+    </ul>
+  </section>
 
-    <section>
-      <h2>5. プレイ方法（BadUIモード）</h2>
-      <p>メニューを開いてUIを切り替える（後述）と「BadUIモード」になります。操作の流れは次のとおりです。</p>
-      <ol>
-        <li>画面上のハンバーガーメニューをクリックし、「UI切り替えボタン」を押してBadUIに変更。</li>
-        <li>画面下部のグレー帯は消え、その代わりに「Answer」ボタンが表示されます。</li>
-        <li><strong>「Answer」ボタン</strong>を押すとモーダルウィンドウが表示され、そこに4種の形が並びます。</li>
-        <li>
-          選びたい形をクリックすると「Confirm画面」が出てきますので、
-          <strong>Yes</strong>を選べばその形で回答確定となります。
-        </li>
-        <li>
-          正解・不正解は内部で判定されますが、
-          不正解時のアラートなどは表示しない仕様（廃止）となっています。
-        </li>
-      </ol>
-      <p>
-        <img src="badui-example.png" alt="BadUIモードのスクリーンショット" class="screenshot">
-      </p>
-    </section>
+  <section>
+    <h2>4. BadUI モードの遊び方</h2>
+    <ol>
+      <li>ハンバーガーメニューから「UI切り替えボタン」を押してBadUIに変更します。</li>
+      <li>下部のグレー帯は消え、「Answer」ボタンが表示されます。</li>
+      <li>「Answer」を押すと4種類の図形が並ぶモーダルが出るので、選択＆Yesで回答確定です。</li>
+      <li>不正解でもポップアップは表示されません。（廃止済）</li>
+    </ol>
+  </section>
 
-    <section>
-      <h2>6. ハンバーガーメニューの操作</h2>
-      <ul>
-        <li>
-          画面左上にある <strong>三本線(ハンバーガーメニュー)</strong> をクリックするとメニューが開きます。
-        </li>
-        <li>
-          メニュー内の <strong>「UI切り替えボタン」</strong> を押すと、
-          「GoodUI」⇔「BadUI」 が相互に切り替わります。
-        </li>
-        <li>
-          メニュー右上の <strong>「×ボタン」</strong> でメニューを閉じることができます。
-        </li>
-      </ul>
-    </section>
+  <section>
+    <h2>5. 終了とCSV出力</h2>
+    <ul>
+      <li>制限時間切れ、または全レベルクリア（200レベル）が終わるとゲーム終了です。</li>
+      <li>「Session Ended」のメッセージが表示され、画面右下に「Download CSV」ボタンが出現します。</li>
+      <li>クリックすると、各レベルのクリアタイムやUIモードなどが記録されたCSVをダウンロードできます。</li>
+    </ul>
+  </section>
 
-    <section>
-      <h2>7. ゲーム終了と再スタート</h2>
-      <ul>
-        <li>
-          <strong>時間切れまたは全レベルクリア</strong>すると「Session Ended」というアラートが出て、
-          ゲームは自動的に終了します。
-        </li>
-        <li>
-          終了後は画面右下に <strong>「Download CSV」</strong> ボタンが表示され、
-          プレイ履歴（クリアタイムや正解時のUIモードなど）がCSVでダウンロードできます。
-        </li>
-        <li>
-          ゲームをもう一度最初からやり直したい場合は、左下にある <strong>「Restart」</strong> ボタンを押すか、
-          またはメニューから再度起動しなおしてください。
-        </li>
-      </ul>
-    </section>
+  <section>
+    <h2>6. Restart / 強制終了</h2>
+    <p>途中でやり直す場合は、画面左下にある「Restart」ボタンを押すとセッションを強制終了し、再スタートできます。</p>
+  </section>
 
-    <section>
-      <h2>8. CSVダウンロード</h2>
-      <p>
-        ゲーム終了後に表示される「Download CSV」ボタンをクリックすると、下記のような内容が出力されます。
-      </p>
-      <ul>
-        <li><code>Play Count</code>：何回目のプレイか</li>
-        <li><code>Session Start</code>：プレイ開始日時（ISO8601形式）</li>
-        <li><code>Session End</code>：プレイ終了日時（ISO8601形式）</li>
-        <li><code>Level,Clear Time (ms),UIMode</code>：各レベルをクリアした際の経過時間とUIモード</li>
-      </ul>
-      <p>
-        CSV例：<br>
-        <code>
-        Play Count,Session Start,Session End<br>
-        1,2025-03-31T12:34:56.789Z,2025-03-31T12:38:00.123Z<br>
-        <br>
-        Level,Clear Time (ms),UIMode<br>
-        1,2500,GoodUI<br>
-        2,3432,BadUI<br>
-        ...
-        </code>
-      </p>
-      <p>このファイルをExcelやスプレッドシートなどで開くことで、どのUIモードが早いかなどを分析できます。</p>
-    </section>
+  <footer>
+    &copy; 2025 Shape Puzzle Game
+  </footer>
+</main>
 
-    <section>
-      <h2>9. 不具合が起きた場合</h2>
-      <p>
-        もし画面が真っ白で何も表示されない、メニューが開かないなどの不具合があれば、
-        ブラウザのJavaScriptのエラーログを確認してください。  
-        また、他のブラウザ（Chrome, Firefox, Safari等）でお試しいただくと改善する場合があります。
-      </p>
-    </section>
-
-    <footer>
-      <p>&copy; 2025 Shape Puzzle Game - All Rights Reserved.</p>
-    </footer>
-  </main>
 </body>
 </html>
