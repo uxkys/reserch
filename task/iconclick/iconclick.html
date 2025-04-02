@@ -1,459 +1,771 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Shape Puzzle with Chakra UI</title>
-  <!-- React & ReactDOM -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-  <!-- Emotion (Chakra UIの依存) -->
-  <script src="https://unpkg.com/@emotion/react@11.10.8/dist/emotion-react.umd.min.js"></script>
-  <script src="https://unpkg.com/@emotion/styled@11.10.8/dist/emotion-styled.umd.min.js"></script>
-
-  <!-- Chakra UI -->
-  <script src="https://unpkg.com/@chakra-ui/react@2.6.2/dist/chakra-ui-react.umd.min.js"></script>
-  <!-- Icons (任意) -->
-  <script src="https://unpkg.com/@chakra-ui/icons@2.0.17/dist/chakra-ui-icons.umd.min.js"></script>
-
+  <meta charset="UTF-8">
+  <title>Shape Puzzle Game (GoodUI / BadUI Toggle)</title>
   <style>
-    body, html, #root {
+    /* ======== 全体レイアウト ======== */
+    body {
       margin: 0;
       padding: 0;
-      height: 100%;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
       background-color: #f0f0f0;
+      position: relative;
     }
-    /* 図形のスタイル */
-    .shape-item {
+
+    /* ======== ゲーム表示領域 ======== */
+    #game-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background-color: #fff;
+      border-bottom: 2px solid #ccc;
+
+      /* ▼ここが重要：#button-container(高さ80px) + 16pxの余白 = 96px */
+      margin-bottom: 96px;
+    }
+
+    /* レベル表示 (左上) */
+    #level-display {
       position: absolute;
-      width: 30px; height: 30px;
-      text-align: center;
-      line-height: 30px;
-      user-select: none;
-      pointer-events: none; /* クリック無効 */
-      font-size: 24px;
-      font-weight: bold;
+      font-size: 18px;
+      background: rgba(255,255,255,0.7);
+      padding: 5px 10px;
+      border-radius: 5px;
+      z-index: 1000;
+      left: 70px; 
+      top: 10px;  
     }
-    /* レベル＆タイマー部分の上端被りを回避するため、図形配置は余白を確保している */
+
+    /* タイマー表示 (右上) */
+    #timer-display {
+      position: absolute;
+      font-size: 18px;
+      background: rgba(255,255,255,0.7);
+      padding: 5px 10px;
+      border-radius: 5px;
+      z-index: 1000;
+      right: 10px;
+      top: 10px;
+    }
+
+    /* ======== スタート画面コンテナ ======== */
+    #start-screen {
+      position: absolute;
+      z-index: 9999; /* 最前面に表示 */
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      background-color: #fff;
+      padding: 20px;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    #start-screen label {
+      font-size: 14px;
+    }
+    #start-btn {
+      margin-top: 10px;
+      font-size: 16px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+
+    /* CSVダウンロードボタン (画面右下) */
+    #csv-download-btn {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      font-size: 16px;
+      padding: 10px;
+      cursor: pointer;
+      display: none;
+      z-index: 2000;
+    }
+    /* リスタートボタン (画面左下) */
+    #restart-btn {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      font-size: 16px;
+      padding: 10px;
+      cursor: pointer;
+      display: none;
+      z-index: 2000;
+    }
+
+    /* ======== GoodUIボタンのコンテナ (画面下部いっぱい) ======== */
+    #button-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px;
+      background-color: #ddd; /* グレー背景 */
+      z-index: 1200;
+    }
+
+    .btn-wrapper {
+      text-align: center;
+    }
+    .btn-wrapper button {
+      display: inline-block;
+      width: 60px;
+      height: 60px;
+      line-height: 60px;
+      text-align: center;
+      cursor: pointer;
+      border: 2px solid #333;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 32px;
+    }
+    .btn-wrapper[data-shape="▲"] button,
+    .btn-wrapper[data-shape="★"] button {
+      font-size: 24px; /* ▲と★は少し小さめ */
+    }
+
+    /* ======== 画面上の図形 ======== */
+    .shape {
+      position: absolute;
+      font-size: 24px;
+      user-select: none;
+      cursor: default; /* クリック無効 */
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+    }
+
+    /* ======== ハンバーガーメニュー ======== */
+    #hamburger-menu {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1301;
+      font-size: 24px;
+      background: rgba(255,255,255,0.7);
+      border: none;
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      text-align: center;
+    }
+    #menu-panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 200px;
+      background: #aaa;
+      color: #fff;
+      padding: 10px;
+      transform: translateX(-220px);
+      transition: transform 0.3s ease;
+      z-index: 1300;
+      height: 100vh;
+    }
+    #menu-panel.open {
+      transform: translateX(0);
+    }
+    #toggle-ui-btn {
+      display: block;
+      margin: 20px auto;
+      width: 40px;
+      height: 40px;
+      background: #666;
+      border: none;
+      cursor: pointer;
+    }
+    #close-menu-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: 1px solid #fff;
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+      width: 30px;
+      height: 30px;
+      text-align: center;
+    }
+
+    /* ======== モーダル (BadUI) ======== */
+    #modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #333;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+    #modal-content {
+      background: #fff;
+      padding: 20px;
+      min-width: 200px;
+      border-radius: 8px;
+      text-align: center;
+      position: relative;
+    }
+    #modal-content h2 {
+      margin-top: 0;
+    }
+    /* ボタン枠をなくす */
+    .badui-shape-btn,
+    .confirm-btn {
+      margin: 10px;
+      cursor: pointer;
+      border: none; /* 枠線をなくす */
+      background: #eee;
+      padding: 5px 10px;
+    }
+    .highlight {
+      background: green;
+      color: #fff;
+    }
+    .font16 {
+      font-size: 16px;
+    }
+    .font12 {
+      font-size: 12px;
+    }
+
+    #badui-shape-container {
+      margin-bottom: 10px;
+    }
+    #confirm-container {
+      display: none;
+      margin-top: 10px;
+    }
+
+    /* BadUI用: 「Answer」ボタン */
+    #badui-answer-button-container {
+      display:none; 
+      text-align:center; 
+      padding:10px; 
+      background:#ddd;
+      position: static;
+    }
+    #answer-btn {
+      padding:10px 20px; 
+      cursor:pointer;
+      border: none; /* 枠線不要 */
+      background: #ccc;
+    }
+
+    /* ======== トースト通知 (GoodUI用) ========
+       右側に配置し、button-containerと被らないよう
+       bottomを(80px+16px=)96px程度にして隙間を開ける */
+    #toast {
+      position: fixed;
+      right: 10px;
+      bottom: 96px; 
+      background: rgba(0,0,0,0.2);
+      color: #fff;
+      padding: 10px;
+      border-radius: 4px;
+      display: none;
+      font-size: 24px;
+      z-index: 9999;
+    }
   </style>
 </head>
 <body>
-<div id="root"></div>
+
+<!-- ハンバーガーメニュー（左上） -->
+<button id="hamburger-menu">
+  &#9776; <!-- 三本線アイコン -->
+</button>
+
+<!-- メニュー展開パネル -->
+<div id="menu-panel">
+  <button id="close-menu-btn">×</button>
+  <!-- トグルボタン(無名) -->
+  <button id="toggle-ui-btn"></button>
+</div>
+
+<!-- スタート画面 (プレイ時間指定 + Startボタン) -->
+<div id="start-screen">
+  <label for="play-time">プレイ時間(秒):</label>
+  <input type="number" id="play-time" value="180" min="10" max="9999" style="width:80px; margin:0 10px;">
+  <br><br>
+  <button id="start-btn">Start</button>
+</div>
+
+<!-- ゲーム領域 -->
+<div id="game-container">
+  <div id="level-display"></div>
+  <div id="timer-display"></div>
+</div>
+
+<!-- GoodUIの回答ボタン群 -->
+<div id="button-container">
+  <!-- Order: ●, ▲, ■, ★ -->
+  <div class="btn-wrapper" data-shape="●">
+    <button data-shape="●">●</button>
+  </div>
+  <div class="btn-wrapper" data-shape="▲">
+    <button data-shape="▲">▲</button>
+  </div>
+  <div class="btn-wrapper" data-shape="■">
+    <button data-shape="■">■</button>
+  </div>
+  <div class="btn-wrapper" data-shape="★">
+    <button data-shape="★">★</button>
+  </div>
+</div>
+
+<!-- BadUI用: 「Answer」ボタン -->
+<div id="badui-answer-button-container">
+  <button id="answer-btn">Answer</button>
+</div>
+
+<!-- モーダル: BadUIで形ボタンを選ばせる -->
+<div id="modal-overlay">
+  <div id="modal-content">
+    <h2>どの形を選びますか？</h2>
+    <div id="badui-shape-container"></div>
+    <div id="confirm-container">
+      <p>この回答でよろしいですか？</p>
+      <button class="confirm-btn" data-choice="go">go</button>
+      <button class="confirm-btn" data-choice="no">no</button>
+      <!-- 「画面に戻る」→「return」に変更 -->
+      <button class="confirm-btn" data-choice="return">return</button>
+    </div>
+  </div>
+</div>
+
+<!-- CSVダウンロード & リスタートボタン -->
+<button id="csv-download-btn">Download CSV</button>
+<button id="restart-btn">Restart</button>
+
+<!-- トースト通知 (GoodUI用) -->
+<div id="toast"></div>
 
 <script>
-(function() {
-  const {
-    ChakraProvider,
-    Box,
-    Button,
-    Text,
-    Flex,
-    Input,
-    NumberInput,
-    NumberInputField,
-    useToast,
-    Modal,
-    ModalOverlay,
-    ModalContent,
-    ModalHeader,
-    ModalCloseButton,
-    ModalBody,
-    ModalFooter,
-    SimpleGrid,
-    useDisclosure,
-    Center,
-    HStack,
-    VStack,
-    Stack
-  } = window["chakra-ui-react"];
+  /* ================================
+     グローバル変数や設定
+  =================================*/
+  const shapes = ["■", "▲", "●", "★"];
+  const totalLevels = 200;
+  let currentLevel = 1;
+  let correctShape = "";
+  let levelStartTime = 0;
+  let sessionActive = false;
+  let timerInterval;
+  let isBadUI = false; // 現在のUIモード(false = GoodUI, true = BadUI)
 
-  // 画面全体を包むメインコンポーネント
-  function ChakraPuzzleApp() {
-    const toast = useToast();
+  // CSV出力用
+  let sessionData = {
+    playCount: 0,
+    sessionStart: null,
+    sessionEnd: null,
+    levels: []  // { level: n, clearTime: ms, mode: "GoodUI" or "BadUI" }
+  };
 
-    // -----------------------------
-    // ゲーム関連のステート
-    // -----------------------------
-    const [isSessionActive, setIsSessionActive] = React.useState(false);
-    const [playTime, setPlayTime] = React.useState(3); // デフォルト3分
-    const [timeRemaining, setTimeRemaining] = React.useState(playTime * 60);
-    const [timerId, setTimerId] = React.useState(null);
+  /* DOM要素の取得 */
+  const gameContainer = document.getElementById('game-container');
+  const levelDisplay = document.getElementById('level-display');
+  const timerDisplay = document.getElementById('timer-display');
+  const startBtn = document.getElementById('start-btn');
+  const playTimeInput = document.getElementById('play-time');
+  const startScreen = document.getElementById('start-screen');
+  const csvDownloadBtn = document.getElementById('csv-download-btn');
+  const restartBtn = document.getElementById('restart-btn');
+  const buttons = document.querySelectorAll('#button-container button');
+  const hamburgerMenuBtn = document.getElementById('hamburger-menu');
+  const menuPanel = document.getElementById('menu-panel');
+  const toggleUIBtn = document.getElementById('toggle-ui-btn');
+  const closeMenuBtn = document.getElementById('close-menu-btn');
+  const baduiAnswerContainer = document.getElementById('badui-answer-button-container');
+  const answerBtn = document.getElementById('answer-btn');
+  const modalOverlay = document.getElementById('modal-overlay');
+  const baduiShapeContainer = document.getElementById('badui-shape-container');
+  const confirmContainer = document.getElementById('confirm-container');
+  const toast = document.getElementById('toast');
 
-    const [isBadUI, setIsBadUI] = React.useState(false);
-    const [level, setLevel] = React.useState(1);
-    const [totalLevels, setTotalLevels] = React.useState(200);
-    const [correctShape, setCorrectShape] = React.useState("");
-    const [shapesPos, setShapesPos] = React.useState([]); // 図形配置
+  /* ================================
+     イベントリスナー
+  =================================*/
 
-    // スタート前にプレイ時間をフォームで設定
-    const handlePlayTimeChange = (value) => {
-      // NumberInputField から受け取った文字列を数値化
-      const val = parseInt(value, 10);
-      if (!isNaN(val)) {
-        setPlayTime(val);
-      }
-    };
+  // スタートボタン
+  startBtn.addEventListener('click', () => {
+    startSession();
+  });
 
-    // -----------------------------
-    // タイマー
-    // -----------------------------
-    React.useEffect(() => {
-      // 残り時間が変化したらチェック
-      if (timeRemaining <= 0 && isSessionActive) {
-        // 時間切れ
-        endSession();
-      }
-    }, [timeRemaining, isSessionActive]);
+  // リスタートボタン
+  restartBtn.addEventListener('click', () => {
+    endSession(true); // 強制終了
+    // スタート画面を再び表示
+    startScreen.style.display = 'block';
+    restartBtn.style.display = 'none';
+  });
 
-    const startTimer = React.useCallback((durationSeconds) => {
-      let remain = durationSeconds;
-      setTimeRemaining(remain);
-      const id = setInterval(() => {
-        remain -= 1;
-        setTimeRemaining(remain);
-        if (remain <= 0) {
-          clearInterval(id);
-        }
-      }, 1000);
-      setTimerId(id);
-    }, []);
+  // GoodUI側の回答ボタン
+  buttons.forEach(button => {
+    button.addEventListener('click', () => {
+      if (!sessionActive) return;
+      if (isBadUI) return; // BadUIモード中は無効
+      const selectedShape = button.getAttribute('data-shape');
+      processShapeSelection(selectedShape);
+    });
+  });
 
-    const stopTimer = React.useCallback(() => {
-      if (timerId) {
-        clearInterval(timerId);
-        setTimerId(null);
-      }
-    }, [timerId]);
+  // BadUI側 「Answer」ボタン
+  answerBtn.addEventListener('click', () => {
+    if (!sessionActive) return;
+    openBadUIModal();
+  });
 
-    // -----------------------------
-    // ゲーム開始/終了
-    // -----------------------------
-    const startSession = () => {
-      setIsSessionActive(true);
-      setLevel(1);
-      // 指定のプレイ時間を秒にしてスタート
-      const duration = playTime * 60;
-      startTimer(duration);
+  // ハンバーガーメニューのトグル
+  hamburgerMenuBtn.addEventListener('click', () => {
+    menuPanel.classList.toggle('open');
+  });
 
-      // レベル1の図形を配置
-      generateShapesForLevel(1);
-    };
+  // メニュー内の閉じるボタン(×)
+  closeMenuBtn.addEventListener('click', () => {
+    menuPanel.classList.remove('open');
+  });
 
-    const endSession = (forced = false) => {
-      stopTimer();
-      setIsSessionActive(false);
-      // ゲーム終了 → 図形をクリア
-      setShapesPos([]);
-      if (!forced) {
-        toast({
-          description: "Session Ended",
-          status: "info",
-          duration: 3000,
-          isClosable: true,
-          position: "top"
-        });
-      }
-    };
+  // UI切り替えボタン
+  toggleUIBtn.addEventListener('click', () => {
+    isBadUI = !isBadUI;
+    updateUIVisibility();
+  });
 
-    // リスタート時の処理
-    const handleRestart = () => {
-      endSession(true);
-    };
+  // CSVダウンロードボタン
+  csvDownloadBtn.addEventListener('click', () => {
+    downloadCSV();
+  });
 
-    // -----------------------------
-    // 図形の配置ロジック
-    // -----------------------------
-    const shapeTypes = ["■", "▲", "●", "★"];
+  /* ================================
+     セッション開始
+  =================================*/
+  function startSession() {
+    // スタート画面を非表示
+    startScreen.style.display = 'none';
 
-    const generateShapesForLevel = React.useCallback((lvl) => {
-      // 正解の図形をランダム選択
-      const idx = Math.floor(Math.random() * shapeTypes.length);
-      const correct = shapeTypes[idx];
-      setCorrectShape(correct);
+    sessionActive = true;
+    sessionData.playCount++;
+    sessionData.sessionStart = new Date();
+    currentLevel = 1;
+    sessionData.levels = [];  // 前回の結果をクリア
 
-      // トータル12個配置するとする
-      const totalShapes = 12;
-      // レベル進行につれ、正解形は5->3個へ
-      const T = Math.round(5 - (lvl - 1) * 2 / (totalLevels - 1));
-      const counts = {};
-      counts[correct] = T;
+    // 入力されたプレイ時間(秒)を取得
+    let totalSeconds = parseInt(playTimeInput.value, 10) || 180;
+    startTimer(totalSeconds);
 
-      // 残りの形を割り振り
-      const remainder = totalShapes - T;
-      const base = Math.floor(remainder / 3);
-      let extra = remainder % 3;
+    startPuzzle();
 
-      shapeTypes.forEach(s => {
-        if (s === correct) return;
-        let cnt = base;
-        if (extra > 0) {
-          cnt++;
-          extra--;
-        }
-        counts[s] = Math.max(cnt, 1);
-      });
-
-      // 実際に positions[] を生成
-      const newPositions = [];
-      const containerWidth = 800;   // 仮固定
-      const containerHeight = 500; // 仮固定
-      // 上端60pxはレベル表示等と被らないようにする
-      const topOffset = 60;
-      const shapeSize = 30;
-
-      function checkOverlap(x, y, arr) {
-        for (const p of arr) {
-          if (x < p.x + shapeSize &&
-              x + shapeSize > p.x &&
-              y < p.y + shapeSize &&
-              y + shapeSize > p.y) {
-            return true;
-          }
-        }
-        return false;
-      }
-
-      Object.keys(counts).forEach(shape => {
-        for (let i = 0; i < counts[shape]; i++) {
-          let placed = false;
-          let tries = 0;
-          while (!placed && tries < 100) {
-            const randX = getRandomInt(0, containerWidth - shapeSize);
-            const randY = getRandomInt(topOffset, containerHeight - shapeSize);
-            if (!checkOverlap(randX, randY, newPositions)) {
-              newPositions.push({
-                shape,
-                x: randX,
-                y: randY,
-              });
-              placed = true;
-            }
-            tries++;
-          }
-        }
-      });
-
-      setShapesPos(newPositions);
-    }, [totalLevels]);
-
-    // -----------------------------
-    // GoodUIで回答ボタンをクリック
-    // -----------------------------
-    const handleGoodUIAnswer = (shape) => {
-      if (!isSessionActive) return;
-      if (isBadUI) return; // BadUIモードは無効
-      checkAnswer(shape);
-    };
-
-    // -----------------------------
-    // BadUIのモーダル関連
-    // -----------------------------
-    const { isOpen, onOpen, onClose } = useDisclosure();
-    const [selectedShape, setSelectedShape] = React.useState(null);
-
-    const handleOpenAnswerModal = () => {
-      if (!isSessionActive) return;
-      onOpen();
-    };
-
-    const handleChooseShapeBadUI = (s) => {
-      // BadUIで選択した図形
-      setSelectedShape(s);
-    };
-
-    const handleConfirmBadUI = () => {
-      if (selectedShape) {
-        // 確認OK→回答チェック
-        checkAnswer(selectedShape);
-      }
-      onClose();
-    };
-
-    const handleReturnBadUI = () => {
-      // "return" -> モーダル閉じるだけ
-      onClose();
-    };
-
-    // -----------------------------
-    // 正解/不正解チェック & レベル進行
-    // -----------------------------
-    const checkAnswer = (shape) => {
-      if (shape === correctShape) {
-        // 正解
-        showToast("⭕️", "success");
-        // 次レベル
-        if (level < totalLevels) {
-          const nextLevel = level + 1;
-          setLevel(nextLevel);
-          generateShapesForLevel(nextLevel);
-        } else {
-          // 全部終わったらセッション終了
-          endSession(false);
-        }
-      } else {
-        // 不正解 -> トースト❌
-        showToast("❌", "error");
-        // 不正解でもレベルは進まない(再回答)
-        // BadUIなら ポップアップ表示を廃止 → 何もしない
-      }
-    };
-
-    // -----------------------------
-    // トースト通知
-    // -----------------------------
-    const showToast = (message, status) => {
-      toast.closeAll(); // 連続表示を防ぐため一旦全部閉じる
-      toast({
-        description: message,
-        status: status,
-        duration: 3000,
-        position: "bottom-left",
-        isClosable: false
-      });
-    };
-
-    // -----------------------------
-    // ユーティリティ
-    // -----------------------------
-    function getRandomInt(min, max) {
-      return Math.floor(Math.random() * (max - min)) + min;
-    }
-
-    // -----------------------------
-    // レンダリング
-    // -----------------------------
-    return (
-      <Box height="100%" display="flex" flexDirection="column">
-        {/* ヘッダー部分 */}
-        <Box bg="gray.200" p={4}>
-          <Flex alignItems="center" justifyContent="space-between">
-            <Text fontWeight="bold">Shape Puzzle (Chakra UI)</Text>
-            {/* プレイ時間設定 & Start */}
-            {!isSessionActive && (
-              <HStack>
-                <Text>Play Time (min):</Text>
-                <NumberInput
-                  size="sm"
-                  width="60px"
-                  min={1}
-                  max={60}
-                  value={playTime}
-                  onChange={handlePlayTimeChange}
-                >
-                  <NumberInputField />
-                </NumberInput>
-                <Button colorScheme="blue" onClick={startSession}>
-                  Start
-                </Button>
-              </HStack>
-            )}
-            {isSessionActive && (
-              <Button colorScheme="orange" onClick={handleRestart}>
-                Restart
-              </Button>
-            )}
-          </Flex>
-        </Box>
-
-        {/* メインコンテナ */}
-        <Flex flex="1" position="relative" bg="white" overflow="hidden">
-          {/* レベル表示 & タイマー */}
-          <Box position="absolute" left="10px" top="10px" bg="whiteAlpha.700" p={2} borderRadius="md" zIndex={1}>
-            <Text>Level {level} / {totalLevels}</Text>
-          </Box>
-          <Box position="absolute" right="10px" top="10px" bg="whiteAlpha.700" p={2} borderRadius="md" zIndex={1}>
-            <Text>Time: {Math.max(timeRemaining, 0)}s</Text>
-          </Box>
-
-          {/* 図形の配置 */}
-          <Center w="800px" h="500px" margin="0 auto" position="relative" bg="gray.50" mt="60px">
-            {shapesPos.map((item, idx) => {
-              return (
-                <Box
-                  key={idx}
-                  className="shape-item"
-                  style={{
-                    left: `${item.x}px`,
-                    top: `${item.y - 60}px` // 60px分ずらす（箱自体がCenter内にあるための微調整）
-                  }}
-                >
-                  {item.shape}
-                </Box>
-              );
-            })}
-          </Center>
-        </Flex>
-
-        {/* フッター部分: GoodUI or BadUI */}
-        {isSessionActive && !isBadUI && (
-          <Box bg="gray.100" p={4} borderTop="1px solid #ccc">
-            {/* GoodUI: 4つのボタンを中央に隣接させる */}
-            <HStack justifyContent="center" spacing={4}>
-              {shapeTypes.map(s => (
-                <Button
-                  key={s}
-                  colorScheme="teal"
-                  variant="solid"
-                  onClick={() => handleGoodUIAnswer(s)}
-                >
-                  {s}
-                </Button>
-              ))}
-            </HStack>
-          </Box>
-        )}
-
-        {isSessionActive && isBadUI && (
-          <Box bg="gray.100" p={4} borderTop="1px solid #ccc">
-            {/* BadUI: "Answer" ボタンのみ */}
-            <Center>
-              <Button colorScheme="red" onClick={handleOpenAnswerModal}>
-                Answer
-              </Button>
-            </Center>
-          </Box>
-        )}
-
-        {/* BadUIのモーダル */}
-        <Modal isOpen={isOpen} onClose={onClose}>
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Select the shape</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <SimpleGrid columns={2} spacing={2}>
-                {shapeTypes.map(s => (
-                  <Button
-                    key={s}
-                    fontSize={ (s === "●" || s === "■") ? "16px" : "12px" }
-                    onClick={() => handleChooseShapeBadUI(s)}
-                  >
-                    {s}
-                  </Button>
-                ))}
-              </SimpleGrid>
-            </ModalBody>
-            <ModalFooter>
-              <HStack spacing={2}>
-                <Button colorScheme="blue" onClick={handleConfirmBadUI}>Confirm</Button>
-                <Button variant="outline" onClick={handleReturnBadUI}>return</Button>
-              </HStack>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      </Box>
-    );
+    csvDownloadBtn.style.display = 'none'; 
+    restartBtn.style.display = 'block'; // リスタートを有効化
   }
 
-  // ルートレンダリング
-  const rootElement = document.getElementById("root");
-  ReactDOM.render(
-    <ChakraProvider>
-      <ChakraPuzzleApp />
-    </ChakraProvider>,
-    rootElement
-  );
-})();
+  /* ================================
+     タイマー処理
+  =================================*/
+  function startTimer(seconds) {
+    let remaining = seconds;
+    updateTimerDisplay(remaining);
+
+    timerInterval = setInterval(() => {
+      remaining--;
+      updateTimerDisplay(remaining);
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        endSession(false); // 時間切れ
+      }
+    }, 1000);
+  }
+
+  function updateTimerDisplay(seconds) {
+    const min = Math.floor(seconds / 60);
+    const sec = seconds % 60;
+    timerDisplay.textContent = `Remaining: ${min}:${sec < 10 ? '0' : ''}${sec}`;
+  }
+
+  /* ================================
+     Puzzle開始（レベル生成）
+  =================================*/
+  function startPuzzle() {
+    if (!sessionActive) return;
+
+    // 既存の図形を消す
+    gameContainer.querySelectorAll('.shape').forEach(el => el.remove());
+
+    levelDisplay.textContent = `Level ${currentLevel} / ${totalLevels}`;
+    levelStartTime = Date.now();
+
+    // 正解形をランダムで選択
+    const targetIndex = Math.floor(Math.random() * shapes.length);
+    correctShape = shapes[targetIndex];
+
+    // レベルごとの図形数 (例)
+    const totalShapes = 12;
+    // レベル進行で正解数を少しずつ減らしていくサンプル
+    const T = Math.max(3, Math.round(5 - (currentLevel - 1) * 2 / (totalLevels - 1)));
+
+    // カウント分布
+    const counts = {};
+    counts[correctShape] = T;
+    const remainder = totalShapes - T;
+    const base = Math.floor(remainder / 3);
+    let extra = remainder % 3;
+    shapes.forEach(shape => {
+      if (shape === correctShape) return;
+      let cnt = base;
+      if (extra > 0) {
+        cnt++;
+        extra--;
+      }
+      counts[shape] = Math.max(cnt, 1);
+    });
+
+    const placedPositions = [];
+    const shapeSize = 30;
+
+    // 画面サイズ取得
+    const containerWidth = gameContainer.clientWidth;
+    const containerHeight = gameContainer.clientHeight;
+    // 図形がトップ(0px)に行かないように60px開ける
+    const topOffset = 60; 
+
+    Object.keys(counts).forEach(shape => {
+      for (let i = 0; i < counts[shape]; i++) {
+        const el = document.createElement('div');
+        el.classList.add('shape');
+        el.textContent = shape;
+
+        let pos;
+        let attempts = 0;
+        do {
+          const x = getRandomInt(0, containerWidth - shapeSize);
+          const y = getRandomInt(topOffset, containerHeight - shapeSize);
+          pos = {x, y, width: shapeSize, height: shapeSize};
+          attempts++;
+        } while (checkOverlap(pos, placedPositions) && attempts < 100);
+
+        placedPositions.push(pos);
+        el.style.left = pos.x + 'px';
+        el.style.top = pos.y + 'px';
+
+        gameContainer.appendChild(el);
+      }
+    });
+
+    // UI 表示更新
+    updateUIVisibility();
+  }
+
+  /* ================================
+     UIモード切り替え
+  =================================*/
+  function updateUIVisibility() {
+    if (isBadUI) {
+      document.getElementById('button-container').style.display = 'none';
+      baduiAnswerContainer.style.display = 'block';
+    } else {
+      document.getElementById('button-container').style.display = 'flex';
+      baduiAnswerContainer.style.display = 'none';
+    }
+  }
+
+  /* ================================
+     BadUI: モーダルで形ボタンを提示
+  =================================*/
+  function openBadUIModal() {
+    const shapeArray = shuffleArray([...shapes]);
+    baduiShapeContainer.innerHTML = '';
+
+    shapeArray.forEach(s => {
+      const btn = document.createElement('button');
+      btn.classList.add('badui-shape-btn');
+      // ●/■ は文字が大きめ
+      if (s === "●" || s === "■") {
+        btn.classList.add('font16');
+      } else {
+        btn.classList.add('font12');
+      }
+      btn.textContent = s;
+      btn.addEventListener('click', () => {
+        showConfirmUI(s);
+      });
+      baduiShapeContainer.appendChild(btn);
+    });
+
+    confirmContainer.style.display = 'none';
+    modalOverlay.style.display = 'flex';
+  }
+
+  function showConfirmUI(selectedShape) {
+    // ボタンを無効化
+    [...baduiShapeContainer.querySelectorAll('button')].forEach(b => {
+      b.disabled = true;
+    });
+    confirmContainer.style.display = 'block';
+
+    const confirmBtns = confirmContainer.querySelectorAll('.confirm-btn');
+    const arrayBtns = Array.from(confirmBtns);
+    shuffleArray(arrayBtns);
+
+    // ランダムに並び替え
+    confirmContainer.appendChild(arrayBtns[0]);
+    confirmContainer.appendChild(arrayBtns[1]);
+    confirmContainer.appendChild(arrayBtns[2]);
+
+    // ランダムで1つ highlight
+    arrayBtns.forEach(b => b.classList.remove('highlight'));
+    const randomIndex = Math.floor(Math.random() * arrayBtns.length);
+    arrayBtns[randomIndex].classList.add('highlight');
+
+    arrayBtns.forEach(btn => {
+      btn.onclick = () => {
+        const choice = btn.getAttribute('data-choice');
+        if (choice === 'go') {
+          closeModal();
+          processShapeSelection(selectedShape);
+        } else if (choice === 'no') {
+          // no -> モーダル閉じる
+          closeModal();
+        } else if (choice === 'return') {
+          // 戻る
+          closeModal();
+        }
+      };
+    });
+  }
+
+  function closeModal() {
+    modalOverlay.style.display = 'none';
+  }
+
+  /* ================================
+     形の最終選択を判定
+  =================================*/
+  function processShapeSelection(selectedShape) {
+    if (!sessionActive) return;
+
+    if (selectedShape === correctShape) {
+      // 正解
+      const clearTime = Date.now() - levelStartTime;
+      sessionData.levels.push({
+        level: currentLevel,
+        clearTime: clearTime,
+        mode: isBadUI ? "BadUI" : "GoodUI"
+      });
+
+      // GoodUIならトーストで⭕️表示
+      if (!isBadUI) {
+        showToast("⭕️");
+      }
+      // 次レベルへ
+      if (currentLevel < totalLevels) {
+        currentLevel++;
+        startPuzzle();
+      } else {
+        // 全レベル終了
+        endSession(false);
+      }
+    } else {
+      // 不正解
+      if (!isBadUI) {
+        // GoodUIならトーストで❌表示
+        showToast("❌");
+      }
+      // BadUIの不正解通知はなし(廃止)
+    }
+  }
+
+  /* ================================
+     セッション終了
+  =================================*/
+  function endSession(isForceEnd) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    sessionActive = false;
+
+    // ゲーム内の図形を消去
+    gameContainer.querySelectorAll('.shape').forEach(el => el.remove());
+
+    if (!isForceEnd) {
+      // 時間切れ or 全レベル終了
+      sessionData.sessionEnd = new Date();
+      alert("Session Ended");
+      csvDownloadBtn.style.display = 'block';
+    } else {
+      // 強制終了
+      sessionData.sessionEnd = new Date();
+    }
+  }
+
+  /* ================================
+     CSV生成 & ダウンロード
+  =================================*/
+  function downloadCSV() {
+    let csv = "Play Count,Session Start,Session End\n";
+    csv += `${sessionData.playCount},${sessionData.sessionStart ? sessionData.sessionStart.toISOString() : ""},${sessionData.sessionEnd ? sessionData.sessionEnd.toISOString() : ""}\n\n`;
+    csv += "Level,Clear Time (ms),UIMode\n";
+    sessionData.levels.forEach(levelData => {
+      csv += `${levelData.level},${levelData.clearTime},${levelData.mode}\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `session_${sessionData.sessionStart ? sessionData.sessionStart.toISOString() : "noTime"}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /* ================================
+     トースト表示 (GoodUIのみ)
+  =================================*/
+  function showToast(icon) {
+    toast.textContent = icon;
+    toast.style.display = 'block';
+    // 3秒後に消す
+    setTimeout(() => {
+      toast.style.display = 'none';
+    }, 3000);
+  }
+
+  /* ================================
+     汎用ユーティリティ
+  =================================*/
+  function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
+  }
+
+  function checkOverlap(pos, placed) {
+    for (let other of placed) {
+      if (pos.x < other.x + other.width &&
+          pos.x + pos.width > other.x &&
+          pos.y < other.y + other.height &&
+          pos.y + pos.height > other.y) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function shuffleArray(array) {
+    // Fisher–Yates shuffle
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
 </script>
 </body>
 </html>
