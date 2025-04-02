@@ -2,188 +2,235 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Icon Click Game ユーザーマニュアル / User Manual</title>
+  <title>Shape Puzzle Game 使い方ガイド</title>
   <style>
     body {
       font-family: sans-serif;
       line-height: 1.6;
       margin: 20px;
-      background-color: #f9f9f9;
-      color: #333;
+      background: #f9f9f9;
     }
-    h1, h2, h3 {
-      color: #222;
+    header {
+      background: #333;
+      color: #fff;
+      padding: 16px;
     }
-    a {
-      color: #0066cc;
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    main {
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      margin-top: 16px;
     }
     section {
-      margin-bottom: 30px;
+      margin-bottom: 32px;
     }
-    .manual-section {
-      border: 1px solid #ddd;
-      padding: 15px;
-      border-radius: 5px;
-      background-color: #fff;
-      margin-bottom: 30px;
+    h2 {
+      color: #333;
+      margin-top: 0;
+      font-size: 18px;
+      border-left: 4px solid #333;
+      padding-left: 8px;
     }
-    .lang-title {
+    p {
+      margin: 8px 0;
+    }
+    code {
       background: #eee;
-      padding: 5px 10px;
-      border-radius: 3px;
-      display: inline-block;
-      margin-bottom: 10px;
-      font-weight: bold;
+      padding: 2px 4px;
+      border-radius: 4px;
     }
-    ol, ul {
-      margin-left: 20px;
+    ul {
+      margin: 4px 0 16px 20px;
     }
-    pre {
-      background: #f4f4f4;
-      padding: 10px;
-      border: 1px solid #ddd;
-      overflow-x: auto;
+    li {
+      margin-bottom: 4px;
+    }
+    .screenshot {
+      border: 1px solid #ccc;
+      margin: 8px 0;
+      display: block;
+      max-width: 320px;
+      background: #fff;
+      padding: 2px;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #777;
     }
   </style>
 </head>
 <body>
-  <h1>Icon Click Game ユーザーマニュアル / User Manual</h1>
-  <p><strong>URL:</strong> <a href="https://uxkys.github.io/reserch/task/iconclick/iconclick" target="_blank">https://uxkys.github.io/reserch/task/iconclick/iconclick</a></p>
-  
-  <div class="manual-section">
-    <div class="lang-title">日本語版</div>
+  <header>
+    <h1>Shape Puzzle Game 使い方ガイド</h1>
+  </header>
+
+  <main>
     <section>
-      <h2>ゲーム概要</h2>
-      <p><strong>ゲーム名:</strong> Shape Puzzle Game (Icon Click Game)</p>
-      <p><strong>目的:</strong> 画面上に配置された複数の図形の中から、最も多く出現している図形を識別し、下部の対応するボタンをクリックして次のレベルへ進む。</p>
-      <p><strong>セッション時間:</strong> 3分</p>
-      <p><strong>総レベル数:</strong> 200面</p>
+      <h2>1. アプリケーション概要</h2>
+      <p>
+        このアプリは、画面にランダムに配置される図形を見て、正解の図形を素早く当てるパズルゲームです。
+        「GoodUI」と「BadUI」の2種類のインターフェースを切り替えながら、どちらが素早く正解を導きやすいかを比較する目的でも使用できます。
+      </p>
+      <p>
+        ゲームプレイ後は結果をCSVでダウンロードでき、クリアタイムや選択モードなどの記録を分析できます。
+      </p>
     </section>
-    
+
     <section>
-      <h2>ゲームの使い方</h2>
-      <h3>1. ゲーム開始方法</h3>
+      <h2>2. ゲーム開始手順</h2>
       <ol>
         <li>
-          ブラウザで <strong>ページ</strong> を開き、表示されるリンク「Go to Icon Click Game」をクリックして、ゲームページ（上記 URL）に遷移します。
+          <strong>起動すると表示されるスタート画面</strong>にて、プレイ時間を入力します（秒単位）。
+          <br>例: <code>180</code>（3分）
         </li>
-        <li>
-          ゲームページ中央に表示される <strong>Start</strong> ボタンをクリックすると、3分間のセッションが開始され、レベル1の問題が自動的に表示されます。
-        </li>
+        <li>入力後、<strong>「Start」ボタン</strong>をクリックします。</li>
+        <li>スタート画面が消え、ゲーム画面が表示されます。</li>
       </ol>
-      
-      <h3>2. ゲームプレイ方法</h3>
-      <ul>
-        <li>各レベルは、画面上に重ならずに配置された12個の図形で構成されています。</li>
-        <li>その中で、ある1種類の図形が最も多く表示されており、これが正解です。</li>
-        <li>
-          画面上の各図形をクリックすると、指定の変換が行われます（例: ▲ → △、■ → □、● → ○、★ → ☆）。  
-          一度クリックした図形は再クリック不可で、下部のカウンターがインクリメントされます。
-        </li>
-        <li>
-          画面下部には、4種類のアイコンボタン（順番: ●, ▲, ■, ★）が表示されており、正解の図形に対応するボタンをクリックすると、そのレベルがクリアされ、次のレベルへ進みます。
-        </li>
-        <li>
-          不正解のボタンをクリックした場合は「Incorrect!」のアラートが表示されます。
-        </li>
-      </ul>
-      
-      <h3>3. レベル進行と難易度</h3>
-      <ul>
-        <li>レベルは1から200まで進行し、各レベルクリア後に自動的に次のレベルへ移行します。</li>
-        <li>
-          難易度は、レベルが上がるにつれて正解となる図形の数が減少し（レベル1では5個、レベル200では3個）、全体の図形数の差が縮まることで、どの図形が最多か判断しにくくなります。
-        </li>
-      </ul>
-      
-      <h3>4. セッション終了とデータ出力</h3>
-      <ul>
-        <li>セッションは3分経過またはレベル200クリア時に終了します。</li>
-        <li>
-          セッション終了後、画面右下に「Download CSV」ボタンが表示されます。  
-          このボタンをクリックすると、プレイ数、セッション開始・終了時刻、各レベルのクリア時間が記録されたCSVファイルをダウンロードできます。
-        </li>
-      </ul>
+      <p>
+        <img src="start-screen-example.png" alt="スタート画面のスクリーンショット" class="screenshot">
+        ※これは例示用のスクリーンショットです
+      </p>
     </section>
-    
+
     <section>
-      <h2>注意事項</h2>
+      <h2>3. ゲーム画面構成</h2>
       <ul>
-        <li>一度クリックして変化した図形は再度クリックできません。</li>
-        <li>セッションは3分間の制限時間内に進行するため、迅速な判断と操作が求められます。</li>
-        <li>各レベルのクリア時間が記録され、後からプレイ傾向を確認できます。</li>
+        <li>
+          <strong>画面上部</strong>：<br>
+          「Level表示」や「Remaining: XX:YY」というタイマー表示があり、
+          ここで現在のレベル数や残り時間を確認できます。
+        </li>
+        <li>
+          <strong>ゲーム領域（中央）</strong>：<br>
+          ランダムに配置された図形が表示されます。図形には「●」「▲」「■」「★」の4種類があります。
+        </li>
+        <li>
+          <strong>画面下部（グレー背景）</strong>：<br>
+          「GoodUI」モードの場合、4つの図形ボタン（●▲■★）が並びます。  
+          「BadUI」モードの場合は、ここにはボタンは表示されず、代わりに「Answer」ボタンが右上メニューから選択できるようになります（※切り替え方法は後述）。
+        </li>
       </ul>
+      <p>
+        <img src="game-screen-example.png" alt="ゲーム画面のスクリーンショット" class="screenshot">
+      </p>
     </section>
-  </div>
-  
-  <div class="manual-section">
-    <div class="lang-title">English Version</div>
+
     <section>
-      <h2>Game Overview</h2>
-      <p><strong>Game Name:</strong> Shape Puzzle Game (Icon Click Game)</p>
-      <p><strong>Objective:</strong> Identify the shape that appears most frequently among the randomly placed shapes on the screen, and click the corresponding icon button at the bottom to advance to the next level.</p>
-      <p><strong>Session Duration:</strong> 3 minutes</p>
-      <p><strong>Total Levels:</strong> 200</p>
-    </section>
-    
-    <section>
-      <h2>How to Play</h2>
-      <h3>1. Starting the Game</h3>
+      <h2>4. プレイ方法（GoodUIモード）</h2>
       <ol>
         <li>
-          Open <strong>page</strong> in your browser. Click the link "Go to Icon Click Game" to navigate to the game page at the URL provided above.
+          画面下部のグレー帯（<code>#button-container</code>）にある4つの図形ボタンから、
+          表示されている図形のうち「正解と思う形」をクリックします。
         </li>
         <li>
-          Click the <strong>Start</strong> button displayed in the center of the game page. This will start a 3-minute session beginning at Level 1.
+          正解なら画面右下に一瞬（約3秒）<strong>「⭕️」</strong>が表示され、次のレベルへ進みます。
+        </li>
+        <li>
+          不正解なら画面右下に一瞬（約3秒）<strong>「❌」</strong>が表示されます。
+          （次のレベルへは進む必要があれば引き続き同じレベルを解答できます）
         </li>
       </ol>
-      
-      <h3>2. Gameplay</h3>
-      <ul>
-        <li>Each level consists of 12 shapes placed randomly on the screen without overlapping.</li>
-        <li>
-          One type of shape appears most frequently, and that is the correct answer for the level.
-        </li>
-        <li>
-          Clicking on a shape will change it as specified (e.g., ▲ becomes △, ■ becomes □, ● becomes ○, ★ becomes ☆).  
-          Once clicked, a shape cannot be clicked again, and the corresponding counter below the icon button will increment.
-        </li>
-        <li>
-          At the bottom of the screen, there are four icon buttons in the following order: ●, ▲, ■, ★.  
-          Click the button corresponding to the correct shape to clear the level and proceed to the next level.
-        </li>
-        <li>
-          If you click an incorrect button, an alert saying "Incorrect!" will be displayed.
-        </li>
-      </ul>
-      
-      <h3>3. Level Progression &amp; Difficulty</h3>
-      <ul>
-        <li>The levels progress automatically from Level 1 to Level 200 as you clear each level.</li>
-        <li>
-          The difficulty increases over levels by reducing the number of the correct shape (Level 1: 5 correct shapes, Level 200: 3 correct shapes), making it harder to determine which shape appears most frequently.
-        </li>
-      </ul>
-      
-      <h3>4. Session End &amp; Data Download</h3>
-      <ul>
-        <li>The session ends when 3 minutes have elapsed or when Level 200 is cleared.</li>
-        <li>
-          After the session ends, a "Download CSV" button will appear at the bottom right.  
-          Click this button to download a CSV file containing your play data (play count, session start/end times, and clear time for each level).
-        </li>
-      </ul>
+      <p>制限時間が終わるか、全レベル（通常200レベル）をクリアするとゲーム終了となります。</p>
     </section>
-    
+
     <section>
-      <h2>Additional Notes</h2>
+      <h2>5. プレイ方法（BadUIモード）</h2>
+      <p>メニューを開いてUIを切り替える（後述）と「BadUIモード」になります。操作の流れは次のとおりです。</p>
+      <ol>
+        <li>画面上のハンバーガーメニューをクリックし、「UI切り替えボタン」を押してBadUIに変更。</li>
+        <li>画面下部のグレー帯は消え、その代わりに「Answer」ボタンが表示されます。</li>
+        <li><strong>「Answer」ボタン</strong>を押すとモーダルウィンドウが表示され、そこに4種の形が並びます。</li>
+        <li>
+          選びたい形をクリックすると「Confirm画面」が出てきますので、
+          <strong>Yes</strong>を選べばその形で回答確定となります。
+        </li>
+        <li>
+          正解・不正解は内部で判定されますが、
+          不正解時のアラートなどは表示しない仕様（廃止）となっています。
+        </li>
+      </ol>
+      <p>
+        <img src="badui-example.png" alt="BadUIモードのスクリーンショット" class="screenshot">
+      </p>
+    </section>
+
+    <section>
+      <h2>6. ハンバーガーメニューの操作</h2>
       <ul>
-        <li>Once a shape is clicked and changed, it cannot be clicked again.</li>
-        <li>Quick decision-making is essential as the session is limited to 3 minutes.</li>
-        <li>Your clear time for each level is recorded so that you can review your performance later.</li>
+        <li>
+          画面左上にある <strong>三本線(ハンバーガーメニュー)</strong> をクリックするとメニューが開きます。
+        </li>
+        <li>
+          メニュー内の <strong>「UI切り替えボタン」</strong> を押すと、
+          「GoodUI」⇔「BadUI」 が相互に切り替わります。
+        </li>
+        <li>
+          メニュー右上の <strong>「×ボタン」</strong> でメニューを閉じることができます。
+        </li>
       </ul>
     </section>
-  </div>
-  
+
+    <section>
+      <h2>7. ゲーム終了と再スタート</h2>
+      <ul>
+        <li>
+          <strong>時間切れまたは全レベルクリア</strong>すると「Session Ended」というアラートが出て、
+          ゲームは自動的に終了します。
+        </li>
+        <li>
+          終了後は画面右下に <strong>「Download CSV」</strong> ボタンが表示され、
+          プレイ履歴（クリアタイムや正解時のUIモードなど）がCSVでダウンロードできます。
+        </li>
+        <li>
+          ゲームをもう一度最初からやり直したい場合は、左下にある <strong>「Restart」</strong> ボタンを押すか、
+          またはメニューから再度起動しなおしてください。
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>8. CSVダウンロード</h2>
+      <p>
+        ゲーム終了後に表示される「Download CSV」ボタンをクリックすると、下記のような内容が出力されます。
+      </p>
+      <ul>
+        <li><code>Play Count</code>：何回目のプレイか</li>
+        <li><code>Session Start</code>：プレイ開始日時（ISO8601形式）</li>
+        <li><code>Session End</code>：プレイ終了日時（ISO8601形式）</li>
+        <li><code>Level,Clear Time (ms),UIMode</code>：各レベルをクリアした際の経過時間とUIモード</li>
+      </ul>
+      <p>
+        CSV例：<br>
+        <code>
+        Play Count,Session Start,Session End<br>
+        1,2025-03-31T12:34:56.789Z,2025-03-31T12:38:00.123Z<br>
+        <br>
+        Level,Clear Time (ms),UIMode<br>
+        1,2500,GoodUI<br>
+        2,3432,BadUI<br>
+        ...
+        </code>
+      </p>
+      <p>このファイルをExcelやスプレッドシートなどで開くことで、どのUIモードが早いかなどを分析できます。</p>
+    </section>
+
+    <section>
+      <h2>9. 不具合が起きた場合</h2>
+      <p>
+        もし画面が真っ白で何も表示されない、メニューが開かないなどの不具合があれば、
+        ブラウザのJavaScriptのエラーログを確認してください。  
+        また、他のブラウザ（Chrome, Firefox, Safari等）でお試しいただくと改善する場合があります。
+      </p>
+    </section>
+
+    <footer>
+      <p>&copy; 2025 Shape Puzzle Game - All Rights Reserved.</p>
+    </footer>
+  </main>
 </body>
 </html>
