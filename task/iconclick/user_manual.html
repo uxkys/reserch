@@ -2,117 +2,163 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Shape Puzzle Game 使い方</title>
+  <title>図形パズルゲーム 説明書</title>
   <style>
     body {
-      margin: 0;
-      padding: 0;
-      background: #f9f9f9;
       font-family: sans-serif;
-    }
-    header {
-      background: #333;
-      color: #fff;
-      padding: 16px;
-      text-align: center;
-    }
-    h1 {
-      margin: 0;
-      font-size: 24px;
-    }
-    main {
-      /* ここで表示領域を最大800pxに、中央寄せ */
-      max-width: 800px;
-      margin: 24px auto;
-      background: #fff;
-      padding: 16px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    }
-    section {
-      margin-bottom: 24px;
-    }
-    h2 {
-      font-size: 18px;
-      border-left: 4px solid #333;
-      padding-left: 8px;
-      margin-top: 0;
-    }
-    p, li {
-      font-size: 14px;
       line-height: 1.6;
-      margin-bottom: 8px;
+      margin: 20px;
+      color: #333;
     }
-    ol, ul {
-      margin: 0 0 16px 20px;
+    h1, h2, h3 {
+      color: #004080;
     }
-    footer {
-      text-align: center;
-      color: #777;
-      font-size: 13px;
-      margin-top: 24px;
+    code {
+      background: #f4f4f4;
+      padding: 2px 4px;
+      font-family: "Courier New", Courier, monospace;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 10px;
+      overflow: auto;
     }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>Shape Puzzle Game 使い方ガイド</h1>
-</header>
+<h1>図形パズルゲーム 説明書</h1>
 
-<main>
-  <section>
-    <h2>1. アプリ概要</h2>
-    <p>ランダムに配置された4種類の図形（●▲■★）のうち、正解の図形を素早く当てるゲームです。</p>
-    <p>「GoodUI / BadUI」を切り替えながら、どちらが操作しやすいか比較することも可能です。</p>
-  </section>
+<p>このドキュメントでは、ゲーム「図形パズル」の実装コードについて解説します。  
+最終的に全50ステージ分のパズルデータを用意し、正解の図形を当てるロジックを実装しています。</p>
 
-  <section>
-    <h2>2. ゲーム開始</h2>
-    <ol>
-      <li>起動時に表示されるスタート画面で、プレイ時間（秒）を入力します。</li>
-      <li>「Start」ボタンをクリックすると、ゲーム画面が表示されます。</li>
-      <li>タイマーがスタートし、制限時間内にできるだけ多くのレベルをクリアしてください。</li>
-    </ol>
-  </section>
+<hr />
 
-  <section>
-    <h2>3. GoodUI モードの遊び方</h2>
+<h2>1. 概要</h2>
+<p>本ゲームは、画面に表示された複数の図形から「最も数が多い図形（正解図形）」を選び当てるパズルです。  
+レベル1からレベル50まであり、レベルが上がるほど「正解図形と他の図形の個数差」が小さくなり、難易度が上がります。</p>
+
+<ul>
+  <li>レベル1～2は <code>diff=5</code></li>
+  <li>レベル3～6は <code>diff=4</code></li>
+  <li>レベル7～14は <code>diff=3</code></li>
+  <li>レベル15～30は <code>diff=2</code></li>
+  <li>レベル31～50は <code>diff=1</code></li>
+</ul>
+
+<p>また、図形の種類は4種類（<code>●(丸)</code>、<code>▲(三角)</code>、<code>■(四角)</code>、<code>★(星)</code>）を使用します。</p>
+
+<hr />
+
+<h2>2. 使用方法</h2>
+<p>本ゲームのメインコードは以下の流れで動作します。</p>
+<ol>
+  <li>ステージ（レベル）ごとに、<code>puzzleData</code> から図形配置情報を読み込む</li>
+  <li>画面（<code>&lt;canvas&gt;</code> または DOM）に図形を描画する</li>
+  <li>プレイヤーが「最も多い図形」をクリック、またはボタンなどで答えを選択</li>
+  <li>正解判定を行い、合っていれば次のステージに進む</li>
+</ol>
+
+<p>このとき、ステージ切り替え時に <code>currentLevel</code> などの変数を増やし、<code>puzzleData[currentLevel]</code> の情報を参照して進めます。</p>
+
+<hr />
+
+<h2>3. コード全体構成</h2>
+<p>コードはおおまかに、次のパートに分かれています。</p>
+
+<ol>
+  <li><strong>座標データの定義：</strong>  
+    <code>coords</code> という配列に、図形を描画する座標 (x, y) を16個定義しています。</li>
+  <li><strong>パズルデータ (全50ステージ分)：</strong>  
+    <code>puzzleData</code> 配列で、レベルごとに図形の種類と座標の割り当てを定義しています。</li>
+  <li><strong>ゲーム制御ロジック：</strong>  
     <ul>
-      <li>画面下部のグレー帯に4つの図形ボタンが表示されます。</li>
-      <li>正解だと思う図形ボタンをクリックしてください。</li>
-      <li>正解なら右側に「⭕️」が3秒表示され、次のレベルに進みます。</li>
-      <li>不正解なら「❌」が3秒表示されます。</li>
+      <li>初期化処理（ステージ切り替えの初期化など）</li>
+      <li>描画処理（<code>drawShapes()</code> 等）</li>
+      <li>イベント処理（クリック、正解判定、リザルト表示 など）</li>
     </ul>
-  </section>
+  </li>
+</ol>
 
-  <section>
-    <h2>4. BadUI モードの遊び方</h2>
-    <ol>
-      <li>ハンバーガーメニューから「UI切り替えボタン」を押してBadUIに変更します。</li>
-      <li>下部のグレー帯は消え、「Answer」ボタンが表示されます。</li>
-      <li>「Answer」を押すと4種類の図形が並ぶモーダルが出るので、選択＆Yesで回答確定です。</li>
-      <li>不正解でもポップアップは表示されません。（廃止済）</li>
-    </ol>
-  </section>
+<p>以下に、「パズルデータ以外のコード全文」を示します（<em>配列部分は省略</em>）。</p>
 
-  <section>
-    <h2>5. 終了とCSV出力</h2>
-    <ul>
-      <li>制限時間切れ、または全レベルクリア（200レベル）が終わるとゲーム終了です。</li>
-      <li>「Session Ended」のメッセージが表示され、画面右下に「Download CSV」ボタンが出現します。</li>
-      <li>クリックすると、各レベルのクリアタイムやUIモードなどが記録されたCSVをダウンロードできます。</li>
-    </ul>
-  </section>
+<pre><code>// ============================================================
+// ここからコード全文 (配列部分は省略)
+// ============================================================
 
-  <section>
-    <h2>6. Restart / 強制終了</h2>
-    <p>途中でやり直す場合は、画面左下にある「Restart」ボタンを押すとセッションを強制終了し、再スタートできます。</p>
-  </section>
+// グローバル変数やステージ管理変数
+let currentLevel = 0; // 0から開始し、puzzleData配列のインデックスに対応
 
-  <footer>
-    &copy; 2025 Shape Puzzle Game
-  </footer>
-</main>
+// 画面初期化などの関数
+function initGame() {
+  // 画面要素やコンテキストの取得
+  // イベントリスナーの設定
+  // etc...
+}
+
+// 図形を描画する関数
+function drawShapes(levelIndex) {
+  // puzzleData[levelIndex].shapes を参照して、
+  // shape と (x, y) を canvas や DOM 要素として描画する
+  // ...
+}
+
+// 正解判定の関数
+function checkAnswer(selectedShape) {
+  // puzzleData[currentLevel].correctShape と比較して、
+  // 正解 or 不正解 を判断
+  // ...
+}
+
+// ステージ移行の関数
+function goToNextLevel() {
+  currentLevel++;
+  if (currentLevel &lt; puzzleData.length) {
+    // 次のステージへ
+    drawShapes(currentLevel);
+  } else {
+    // 全ステージクリア
+    alert("全ステージクリア！");
+  }
+}
+
+// ウィンドウ読み込み時の初期処理
+window.addEventListener("load", () =&gt; {
+  initGame();
+  drawShapes(currentLevel);
+});
+</code></pre>
+
+<p>上記のコードで、<code>puzzleData</code> の定義部分は<span style="color:red;">別途大きいので省略</span>しています。  
+実際には <strong>全50ステージ分</strong>の「<code>correctShape</code>」「<code>shapes</code>」が格納されています。</p>
+
+<hr />
+
+<h2>4. カスタマイズ方法</h2>
+
+<ul>
+  <li><strong>図形の描画方法を変更</strong>  
+    - 例：Canvas API を使って図形を描く / 画像を貼る / SVG を使う など</li>
+  <li><strong>解答方法を変更</strong>  
+    - 例：図形をクリックすると選択扱い / 画面下部に4つボタンを設置し「● / ▲ / ■ / ★」を選ぶ</li>
+  <li><strong>エフェクトやアニメーション</strong>  
+    - 例：正解すると図形が弾け飛ぶ演出や、間違えると×印が出るなど</li>
+</ul>
+
+<hr />
+
+<h2>5. 注意事項</h2>
+<ul>
+  <li>ステージ数が多い（50）ため、<code>puzzleData</code> の定義ファイルが大きくなりがちです。メンテナンスしやすい方法（モジュール分割など）を検討してください。</li>
+  <li>図形を描画する座標（<code>x</code>, <code>y</code>）は、画面サイズに合わせて調整可能です。今回のサンプルでは 400×225 程度の領域で 24px 以上間隔をとるように設計しています。</li>
+  <li>動作環境：HTML5対応ブラウザ（Chrome / Firefox / Safari / Edge など）</li>
+</ul>
+
+<hr />
+<hr />
+<p style="text-align:center;">
+  &copy; 2023 Puzzle Game Project
+</p>
 
 </body>
 </html>
