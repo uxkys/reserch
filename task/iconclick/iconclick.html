@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Shape Puzzle Game (GoodUI / BadUI Toggle)</title>
+  <title>Shape Puzzle Game (400x225 center / 50 levels fixed)</title>
   <style>
     /* ======== 全体レイアウト ======== */
     body {
@@ -16,16 +16,27 @@
       position: relative;
     }
 
-    /* ======== ゲーム表示領域 ======== */
+    /* ======== ゲーム表示領域（画面下部のボタン領域考慮） ======== */
     #game-container {
       flex: 1;
       position: relative;
       overflow: hidden;
       background-color: #fff;
       border-bottom: 2px solid #ccc;
+      margin-bottom: 96px; /* ボタン高さ80px＋隙間16px */
+    }
 
-      /* ▼ここが重要：#button-container(高さ80px) + 16pxの余白 = 96px */
-      margin-bottom: 96px;
+    /* -- 中央に 400x225 のエリアを配置 -- */
+    #puzzle-area {
+      position: absolute;
+      width: 400px;
+      height: 225px;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border: 2px dashed #999;
+      background: #fafafa;
+      /* overflow: hidden; 必要ならコメントアウト解除 */
     }
 
     /* レベル表示 (左上) */
@@ -133,7 +144,7 @@
       font-size: 24px; /* ▲と★は少し小さめ */
     }
 
-    /* ======== 画面上の図形 ======== */
+    /* ======== 画面上の図形 ( puzzle-area 内に配置 ) ======== */
     .shape {
       position: absolute;
       font-size: 24px;
@@ -285,11 +296,9 @@
 <button id="hamburger-menu">
   &#9776; <!-- 三本線アイコン -->
 </button>
-
 <!-- メニュー展開パネル -->
 <div id="menu-panel">
   <button id="close-menu-btn">×</button>
-  <!-- トグルボタン(無名) -->
   <button id="toggle-ui-btn"></button>
 </div>
 
@@ -301,10 +310,13 @@
   <button id="start-btn">Start</button>
 </div>
 
-<!-- ゲーム領域 -->
+<!-- ゲーム領域（中央にパズルエリア 400x225） -->
 <div id="game-container">
   <div id="level-display"></div>
   <div id="timer-display"></div>
+
+  <!-- 図形を配置する中央の固定エリア -->
+  <div id="puzzle-area"></div>
 </div>
 
 <!-- GoodUIの回答ボタン群 -->
@@ -338,7 +350,6 @@
       <p>この回答でよろしいですか？</p>
       <button class="confirm-btn" data-choice="go">go</button>
       <button class="confirm-btn" data-choice="no">no</button>
-      <!-- 「画面に戻る」→「return」に変更 -->
       <button class="confirm-btn" data-choice="return">return</button>
     </div>
   </div>
@@ -353,18 +364,40 @@
 
 <script>
   /* ================================
-     グローバル変数や設定
+     グローバル設定・変数
   =================================*/
-  const shapes = ["■", "▲", "●", "★"];
-  const totalLevels = 200;
+  const SHAPES = ["●","▲","■","★"];
+  const totalLevels = 50; 
   let currentLevel = 1;
   let correctShape = "";
   let levelStartTime = 0;
   let sessionActive = false;
-  let timerInterval;
+  let timerInterval = null;
   let isBadUI = false; // 現在のUIモード(false = GoodUI, true = BadUI)
 
-  // CSV出力用
+  // 画面要素の参照
+  const gameContainer = document.getElementById('game-container');
+  const puzzleArea = document.getElementById('puzzle-area');
+  const levelDisplay = document.getElementById('level-display');
+  const timerDisplay = document.getElementById('timer-display');
+  const startScreen = document.getElementById('start-screen');
+  const playTimeInput = document.getElementById('play-time');
+  const startBtn = document.getElementById('start-btn');
+  const csvDownloadBtn = document.getElementById('csv-download-btn');
+  const restartBtn = document.getElementById('restart-btn');
+  const hamburgerMenuBtn = document.getElementById('hamburger-menu');
+  const menuPanel = document.getElementById('menu-panel');
+  const closeMenuBtn = document.getElementById('close-menu-btn');
+  const toggleUIBtn = document.getElementById('toggle-ui-btn');
+  const baduiAnswerContainer = document.getElementById('badui-answer-button-container');
+  const answerBtn = document.getElementById('answer-btn');
+  const modalOverlay = document.getElementById('modal-overlay');
+  const baduiShapeContainer = document.getElementById('badui-shape-container');
+  const confirmContainer = document.getElementById('confirm-container');
+  const toast = document.getElementById('toast');
+  const buttons = document.querySelectorAll('#button-container button');
+
+  // CSV出力用データ
   let sessionData = {
     playCount: 0,
     sessionStart: null,
@@ -372,106 +405,1583 @@
     levels: []  // { level: n, clearTime: ms, mode: "GoodUI" or "BadUI" }
   };
 
-  /* DOM要素の取得 */
-  const gameContainer = document.getElementById('game-container');
-  const levelDisplay = document.getElementById('level-display');
-  const timerDisplay = document.getElementById('timer-display');
-  const startBtn = document.getElementById('start-btn');
-  const playTimeInput = document.getElementById('play-time');
-  const startScreen = document.getElementById('start-screen');
-  const csvDownloadBtn = document.getElementById('csv-download-btn');
-  const restartBtn = document.getElementById('restart-btn');
-  const buttons = document.querySelectorAll('#button-container button');
-  const hamburgerMenuBtn = document.getElementById('hamburger-menu');
-  const menuPanel = document.getElementById('menu-panel');
-  const toggleUIBtn = document.getElementById('toggle-ui-btn');
-  const closeMenuBtn = document.getElementById('close-menu-btn');
-  const baduiAnswerContainer = document.getElementById('badui-answer-button-container');
-  const answerBtn = document.getElementById('answer-btn');
-  const modalOverlay = document.getElementById('modal-overlay');
-  const baduiShapeContainer = document.getElementById('badui-shape-container');
-  const confirmContainer = document.getElementById('confirm-container');
-  const toast = document.getElementById('toast');
+  /* ================================
+     問題データ(全50レベル分)を固定化
+     - correctShape: 正解の図形
+     - shapes: 画面に配置する図形( shape, x, y )の配列
+       ※ x,y は #puzzle-area (400x225) 内の絶対座標
+  =================================*/
+//////////////////////////////////////////////
+// 座標リスト (x,y) : index=1～16
+//////////////////////////////////////////////
+const coords = [
+  { x:  60, y:  20 },  // index=1
+  { x: 140, y:  20 },  // index=2
+  { x: 220, y:  20 },  // index=3
+  { x: 300, y:  20 },  // index=4
+  { x:  60, y:  70 },  // index=5
+  { x: 140, y:  70 },  // index=6
+  { x: 220, y:  70 },  // index=7
+  { x: 300, y:  70 },  // index=8
+  { x:  60, y: 120 },  // index=9
+  { x: 140, y: 120 },  // index=10
+  { x: 220, y: 120 },  // index=11
+  { x: 300, y: 120 },  // index=12
+  { x:  60, y: 170 },  // index=13
+  { x: 140, y: 170 },  // index=14
+  { x: 220, y: 170 },  // index=15
+  { x: 300, y: 170 },  // index=16
+];
+
+//////////////////////////////////////////////
+// puzzleData : レベル1～30
+//////////////////////////////////////////////
+const puzzleData = [
+  // -----------------------------------------------------------
+  // Level1 (diff=5) : (10,5,1) [3種類のみ使用]
+  //   correctShape = "●"
+  //   分布: 「●×10, ▲×5, ■×1」 (★は不使用)
+  // -----------------------------------------------------------
+  {
+    level: 1,
+    correctShape: "●",
+    shapes: [
+      // "●" x 10
+      { shape: "●", ...coords[0] },  // index=1  (60,20)
+      { shape: "●", ...coords[1] },  // index=2  (140,20)
+      { shape: "●", ...coords[2] },  // index=3  (220,20)
+      { shape: "●", ...coords[5] },  // index=6  (140,70)
+      { shape: "●", ...coords[7] },  // index=8  (300,70)
+      { shape: "●", ...coords[8] },  // index=9  (60,120)
+      { shape: "●", ...coords[10] }, // index=11 (220,120)
+      { shape: "●", ...coords[11] }, // index=12 (300,120)
+      { shape: "●", ...coords[13] }, // index=14 (140,170)
+      { shape: "●", ...coords[15] }, // index=16 (300,170)
+      // "▲" x 5
+      { shape: "▲", ...coords[3] },  // index=4  (300,20)
+      { shape: "▲", ...coords[4] },  // index=5  (60,70)
+      { shape: "▲", ...coords[6] },  // index=7  (220,70)
+      { shape: "▲", ...coords[9] },  // index=10 (140,120)
+      { shape: "▲", ...coords[12] }, // index=13 (60,170)
+      // "■" x 1
+      { shape: "■", ...coords[14] }, // index=15 (220,170)
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level2 (diff=5) : (10,5,1) [3種類のみ使用]
+  //   correctShape = "▲"
+  //   分布: 「▲×10, ■×5, ★×1」 (●は不使用)
+  // -----------------------------------------------------------
+  {
+    level: 2,
+    correctShape: "▲",
+    shapes: [
+      // "▲" x 10
+      { shape: "▲", ...coords[0] },  // (60,20)
+      { shape: "▲", ...coords[1] },  // (140,20)
+      { shape: "▲", ...coords[2] },  // (220,20)
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[7] },
+      { shape: "▲", ...coords[8] },
+      { shape: "▲", ...coords[10] },
+      { shape: "▲", ...coords[11] },
+      { shape: "▲", ...coords[13] },
+      { shape: "▲", ...coords[15] },
+      // "■" x 5
+      { shape: "■", ...coords[3] },
+      { shape: "■", ...coords[4] },
+      { shape: "■", ...coords[6] },
+      { shape: "■", ...coords[9] },
+      { shape: "■", ...coords[12] },
+      // "★" x 1
+      { shape: "★", ...coords[14] },
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level3 (diff=4) : (8,4,2,2)
+  //   correctShape = "■"
+  //   分布: 「■×8, ★×4, ●×2, ▲×2」
+  // -----------------------------------------------------------
+  {
+    level: 3,
+    correctShape: "■",
+    shapes: [
+      // "■" x 8
+      { shape: "■", ...coords[0] },  // (60,20)
+      { shape: "■", ...coords[2] },  // (220,20)
+      { shape: "■", ...coords[5] },  // (140,70)
+      { shape: "■", ...coords[7] },  // (300,70)
+      { shape: "■", ...coords[8] },  // (60,120)
+      { shape: "■", ...coords[10] }, // (220,120)
+      { shape: "■", ...coords[13] }, // (140,170)
+      { shape: "■", ...coords[15] }, // (300,170)
+      // "★" x 4
+      { shape: "★", ...coords[1] },  // (140,20)
+      { shape: "★", ...coords[4] },  // (60,70)
+      { shape: "★", ...coords[6] },  // (220,70)
+      { shape: "★", ...coords[9] },  // (140,120)
+      // "●" x 2
+      { shape: "●", ...coords[11] }, // (300,120)
+      { shape: "●", ...coords[12] }, // (60,170)
+      // "▲" x 2
+      { shape: "▲", ...coords[3] },  // (300,20)
+      { shape: "▲", ...coords[14] }, // (220,170)
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level4 (diff=4) : (8,4,2,2)
+  //   correctShape = "★"
+  //   分布: 「★×8, ●×4, ▲×2, ■×2」
+  // -----------------------------------------------------------
+  {
+    level: 4,
+    correctShape: "★",
+    shapes: [
+      // "★" x 8
+      { shape: "★", ...coords[0] },
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[5] },
+      { shape: "★", ...coords[7] },
+      { shape: "★", ...coords[8] },
+      { shape: "★", ...coords[10] },
+      { shape: "★", ...coords[13] },
+      { shape: "★", ...coords[15] },
+      // "●" x 4
+      { shape: "●", ...coords[1] },
+      { shape: "●", ...coords[4] },
+      { shape: "●", ...coords[6] },
+      { shape: "●", ...coords[9] },
+      // "▲" x 2
+      { shape: "▲", ...coords[11] },
+      { shape: "▲", ...coords[12] },
+      // "■" x 2
+      { shape: "■", ...coords[3] },
+      { shape: "■", ...coords[14] },
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level5 (diff=4) : (8,4,2,2)
+  //   correctShape = "●"
+  //   分布: 「●×8, ▲×4, ■×2, ★×2」
+  // -----------------------------------------------------------
+  {
+    level: 5,
+    correctShape: "●",
+    shapes: [
+      // "●" x 8
+      { shape: "●", ...coords[0] },
+      { shape: "●", ...coords[2] },
+      { shape: "●", ...coords[5] },
+      { shape: "●", ...coords[7] },
+      { shape: "●", ...coords[8] },
+      { shape: "●", ...coords[10] },
+      { shape: "●", ...coords[13] },
+      { shape: "●", ...coords[15] },
+      // "▲" x 4
+      { shape: "▲", ...coords[1] },
+      { shape: "▲", ...coords[4] },
+      { shape: "▲", ...coords[6] },
+      { shape: "▲", ...coords[9] },
+      // "■" x 2
+      { shape: "■", ...coords[11] },
+      { shape: "■", ...coords[12] },
+      // "★" x 2
+      { shape: "★", ...coords[3] },
+      { shape: "★", ...coords[14] },
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level6 (diff=4) : (8,4,2,2)
+  //   correctShape = "▲"
+  //   分布: 「▲×8, ■×4, ★×2, ●×2」
+  // -----------------------------------------------------------
+  {
+    level: 6,
+    correctShape: "▲",
+    shapes: [
+      // "▲" x 8
+      { shape: "▲", ...coords[0] },
+      { shape: "▲", ...coords[2] },
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[7] },
+      { shape: "▲", ...coords[8] },
+      { shape: "▲", ...coords[10] },
+      { shape: "▲", ...coords[13] },
+      { shape: "▲", ...coords[15] },
+      // "■" x 4
+      { shape: "■", ...coords[1] },
+      { shape: "■", ...coords[4] },
+      { shape: "■", ...coords[6] },
+      { shape: "■", ...coords[9] },
+      // "★" x 2
+      { shape: "★", ...coords[11] },
+      { shape: "★", ...coords[12] },
+      // "●" x 2
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[14] },
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level7 (diff=3) : (7,4,4,1)
+  //   correctShape = "■"
+  //   分布: 「■×7, ★×4, ●×4, ▲×1」
+  // -----------------------------------------------------------
+  {
+    level: 7,
+    correctShape: "■",
+    shapes: [
+      // "■" x 7
+      { shape: "■", ...coords[0] },   // index=1  (60,20)
+      { shape: "■", ...coords[3] },   // index=4  (300,20)
+      { shape: "■", ...coords[6] },   // index=7  (220,70)
+      { shape: "■", ...coords[8] },   // index=9  (60,120)
+      { shape: "■", ...coords[11] },  // index=12 (300,120)
+      { shape: "■", ...coords[13] },  // index=14 (140,170)
+      { shape: "■", ...coords[15] },  // index=16 (300,170)
+      // "★" x 4
+      { shape: "★", ...coords[1] },   // (140,20)
+      { shape: "★", ...coords[5] },   // (140,70)
+      { shape: "★", ...coords[7] },   // (300,70)
+      { shape: "★", ...coords[9] },   // (140,120)
+      // "●" x 4
+      { shape: "●", ...coords[2] },   // (220,20)
+      { shape: "●", ...coords[4] },   // (60,70)
+      { shape: "●", ...coords[10] },  // (220,120)
+      { shape: "●", ...coords[12] },  // (60,170)
+      // "▲" x 1
+      { shape: "▲", ...coords[14] },  // (220,170)
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level8 (diff=3) : (7,4,4,1)
+  //   correctShape = "★"
+  //   分布: 「★×7, ●×4, ▲×4, ■×1」
+  // -----------------------------------------------------------
+  {
+    level: 8,
+    correctShape: "★",
+    shapes: [
+      // "★" x 7
+      { shape: "★", ...coords[0] },
+      { shape: "★", ...coords[3] },
+      { shape: "★", ...coords[6] },
+      { shape: "★", ...coords[8] },
+      { shape: "★", ...coords[11] },
+      { shape: "★", ...coords[13] },
+      { shape: "★", ...coords[15] },
+      // "●" x 4
+      { shape: "●", ...coords[1] },
+      { shape: "●", ...coords[5] },
+      { shape: "●", ...coords[7] },
+      { shape: "●", ...coords[9] },
+      // "▲" x 4
+      { shape: "▲", ...coords[2] },
+      { shape: "▲", ...coords[4] },
+      { shape: "▲", ...coords[10] },
+      { shape: "▲", ...coords[12] },
+      // "■" x 1
+      { shape: "■", ...coords[14] },
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level9 (diff=3) : (7,4,4,1)
+  //   correctShape = "●"
+  //   分布: 「●×7, ▲×4, ■×4, ★×1」
+  // -----------------------------------------------------------
+  {
+    level: 9,
+    correctShape: "●",
+    shapes: [
+      // "●" x 7
+      { shape: "●", ...coords[0] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[6] },
+      { shape: "●", ...coords[8] },
+      { shape: "●", ...coords[11] },
+      { shape: "●", ...coords[13] },
+      { shape: "●", ...coords[15] },
+      // "▲" x 4
+      { shape: "▲", ...coords[1] },
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[7] },
+      { shape: "▲", ...coords[9] },
+      // "■" x 4
+      { shape: "■", ...coords[2] },
+      { shape: "■", ...coords[4] },
+      { shape: "■", ...coords[10] },
+      { shape: "■", ...coords[12] },
+      // "★" x 1
+      { shape: "★", ...coords[14] },
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level10 (diff=3) : (7,4,4,1)
+  //   correctShape = "▲"
+  //   分布: 「▲×7, ■×4, ★×4, ●×1」
+  // -----------------------------------------------------------
+  {
+    level: 10,
+    correctShape: "▲",
+    shapes: [
+      // "▲" x 7
+      { shape: "▲", ...coords[0] },
+      { shape: "▲", ...coords[3] },
+      { shape: "▲", ...coords[6] },
+      { shape: "▲", ...coords[8] },
+      { shape: "▲", ...coords[11] },
+      { shape: "▲", ...coords[13] },
+      { shape: "▲", ...coords[15] },
+      // "■" x 4
+      { shape: "■", ...coords[1] },
+      { shape: "■", ...coords[5] },
+      { shape: "■", ...coords[7] },
+      { shape: "■", ...coords[9] },
+      // "★" x 4
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[4] },
+      { shape: "★", ...coords[10] },
+      { shape: "★", ...coords[12] },
+      // "●" x 1
+      { shape: "●", ...coords[14] },
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level11 (diff=3) : (7,4,4,1)
+  //   correctShape = "■"
+  //   分布: 「■×7, ★×4, ●×4, ▲×1」
+  // -----------------------------------------------------------
+  {
+    level: 11,
+    correctShape: "■",
+    shapes: [
+      // "■" x 7
+      { shape: "■", ...coords[0] },
+      { shape: "■", ...coords[3] },
+      { shape: "■", ...coords[6] },
+      { shape: "■", ...coords[8] },
+      { shape: "■", ...coords[11] },
+      { shape: "■", ...coords[13] },
+      { shape: "■", ...coords[15] },
+      // "★" x 4
+      { shape: "★", ...coords[1] },
+      { shape: "★", ...coords[5] },
+      { shape: "★", ...coords[7] },
+      { shape: "★", ...coords[9] },
+      // "●" x 4
+      { shape: "●", ...coords[2] },
+      { shape: "●", ...coords[4] },
+      { shape: "●", ...coords[10] },
+      { shape: "●", ...coords[12] },
+      // "▲" x 1
+      { shape: "▲", ...coords[14] },
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level12 (diff=3) : (7,4,4,1)
+  //   correctShape = "★"
+  //   分布: 「★×7, ●×4, ▲×4, ■×1」
+  // -----------------------------------------------------------
+  {
+    level: 12,
+    correctShape: "★",
+    shapes: [
+      // "★" x 7
+      { shape: "★", ...coords[0] },
+      { shape: "★", ...coords[3] },
+      { shape: "★", ...coords[6] },
+      { shape: "★", ...coords[8] },
+      { shape: "★", ...coords[11] },
+      { shape: "★", ...coords[13] },
+      { shape: "★", ...coords[15] },
+      // "●" x 4
+      { shape: "●", ...coords[1] },
+      { shape: "●", ...coords[5] },
+      { shape: "●", ...coords[7] },
+      { shape: "●", ...coords[9] },
+      // "▲" x 4
+      { shape: "▲", ...coords[2] },
+      { shape: "▲", ...coords[4] },
+      { shape: "▲", ...coords[10] },
+      { shape: "▲", ...coords[12] },
+      // "■" x 1
+      { shape: "■", ...coords[14] },
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level13 (diff=3) : (7,4,4,1)
+  //   correctShape = "●"
+  //   分布: 「●×7, ▲×4, ■×4, ★×1」
+  // -----------------------------------------------------------
+  {
+    level: 13,
+    correctShape: "●",
+    shapes: [
+      // "●" x 7
+      { shape: "●", ...coords[0] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[6] },
+      { shape: "●", ...coords[8] },
+      { shape: "●", ...coords[11] },
+      { shape: "●", ...coords[13] },
+      { shape: "●", ...coords[15] },
+      // "▲" x 4
+      { shape: "▲", ...coords[1] },
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[7] },
+      { shape: "▲", ...coords[9] },
+      // "■" x 4
+      { shape: "■", ...coords[2] },
+      { shape: "■", ...coords[4] },
+      { shape: "■", ...coords[10] },
+      { shape: "■", ...coords[12] },
+      // "★" x 1
+      { shape: "★", ...coords[14] },
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level14 (diff=3) : (7,4,4,1)
+  //   correctShape = "▲"
+  //   分布: 「▲×7, ■×4, ★×4, ●×1」
+  // -----------------------------------------------------------
+  {
+    level: 14,
+    correctShape: "▲",
+    shapes: [
+      // "▲" x 7
+      { shape: "▲", ...coords[0] },
+      { shape: "▲", ...coords[3] },
+      { shape: "▲", ...coords[6] },
+      { shape: "▲", ...coords[8] },
+      { shape: "▲", ...coords[11] },
+      { shape: "▲", ...coords[13] },
+      { shape: "▲", ...coords[15] },
+      // "■" x 4
+      { shape: "■", ...coords[1] },
+      { shape: "■", ...coords[5] },
+      { shape: "■", ...coords[7] },
+      { shape: "■", ...coords[9] },
+      // "★" x 4
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[4] },
+      { shape: "★", ...coords[10] },
+      { shape: "★", ...coords[12] },
+      // "●" x 1
+      { shape: "●", ...coords[14] },
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // ここからレベル15～30 (diff=2: (6,4,4,2))
+  // 前回のロジックどおり、levelを付与してそのまま接続
+  // -----------------------------------------------------------
+
+  // --------------------------
+  // Level15 (correct = ■)
+  // --------------------------
+  {
+    level: 15,
+    correctShape: "■",
+    shapes: [
+      // ■ × 6 → [1,2,7,10,13,16]
+      { shape: "■", ...coords[0] },
+      { shape: "■", ...coords[1] },
+      { shape: "■", ...coords[6] },
+      { shape: "■", ...coords[9] },
+      { shape: "■", ...coords[12] },
+      { shape: "■", ...coords[15] },
+      // ★ × 4 → [3,4,8,11]
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[3] },
+      { shape: "★", ...coords[7] },
+      { shape: "★", ...coords[10] },
+      // ● × 4 → [5,9,14,15]
+      { shape: "●", ...coords[4] },
+      { shape: "●", ...coords[8] },
+      { shape: "●", ...coords[13] },
+      { shape: "●", ...coords[14] },
+      // ▲ × 2 → [6,12]
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[11] },
+    ]
+  },
+
+  // --------------------------
+  // Level16 (correct = ★)
+  // --------------------------
+  {
+    level: 16,
+    correctShape: "★",
+    shapes: [
+      // ★ × 6 → [2,3,6,9,14,15]
+      { shape: "★", ...coords[1] },
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[5] },
+      { shape: "★", ...coords[8] },
+      { shape: "★", ...coords[13] },
+      { shape: "★", ...coords[14] },
+      // ● × 4 → [1,4,7,16]
+      { shape: "●", ...coords[0] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[6] },
+      { shape: "●", ...coords[15] },
+      // ▲ × 4 → [5,8,10,13]
+      { shape: "▲", ...coords[4] },
+      { shape: "▲", ...coords[7] },
+      { shape: "▲", ...coords[9] },
+      { shape: "▲", ...coords[12] },
+      // ■ × 2 → [11,12]
+      { shape: "■", ...coords[10] },
+      { shape: "■", ...coords[11] },
+    ]
+  },
+
+  // --------------------------
+  // Level17 (correct = ●)
+  // --------------------------
+  {
+    level: 17,
+    correctShape: "●",
+    shapes: [
+      // ● × 6 → [3,4,6,8,13,14]
+      { shape: "●", ...coords[2] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[5] },
+      { shape: "●", ...coords[7] },
+      { shape: "●", ...coords[12] },
+      { shape: "●", ...coords[13] },
+      // ▲ × 4 → [2,7,9,16]
+      { shape: "▲", ...coords[1] },
+      { shape: "▲", ...coords[6] },
+      { shape: "▲", ...coords[8] },
+      { shape: "▲", ...coords[15] },
+      // ■ × 4 → [1,5,10,12]
+      { shape: "■", ...coords[0] },
+      { shape: "■", ...coords[4] },
+      { shape: "■", ...coords[9] },
+      { shape: "■", ...coords[11] },
+      // ★ × 2 → [11,15]
+      { shape: "★", ...coords[10] },
+      { shape: "★", ...coords[14] },
+    ]
+  },
+
+  // --------------------------
+  // Level18 (correct = ▲)
+  // --------------------------
+  {
+    level: 18,
+    correctShape: "▲",
+    shapes: [
+      // ▲ × 6 → [1,4,6,11,14,16]
+      { shape: "▲", ...coords[0] },
+      { shape: "▲", ...coords[3] },
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[10] },
+      { shape: "▲", ...coords[13] },
+      { shape: "▲", ...coords[15] },
+      // ■ × 4 → [2,7,9,13]
+      { shape: "■", ...coords[1] },
+      { shape: "■", ...coords[6] },
+      { shape: "■", ...coords[8] },
+      { shape: "■", ...coords[12] },
+      // ★ × 4 → [3,5,8,10]
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[4] },
+      { shape: "★", ...coords[7] },
+      { shape: "★", ...coords[9] },
+      // ● × 2 → [12,15]
+      { shape: "●", ...coords[11] },
+      { shape: "●", ...coords[14] },
+    ]
+  },
+
+  // --------------------------
+  // Level19 (correct = ■)
+  // --------------------------
+  {
+    level: 19,
+    correctShape: "■",
+    shapes: [
+      // 同パターン (correct=■)
+      { shape: "■", ...coords[0] },
+      { shape: "■", ...coords[1] },
+      { shape: "■", ...coords[6] },
+      { shape: "■", ...coords[9] },
+      { shape: "■", ...coords[12] },
+      { shape: "■", ...coords[15] },
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[3] },
+      { shape: "★", ...coords[7] },
+      { shape: "★", ...coords[10] },
+      { shape: "●", ...coords[4] },
+      { shape: "●", ...coords[8] },
+      { shape: "●", ...coords[13] },
+      { shape: "●", ...coords[14] },
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[11] },
+    ]
+  },
+
+  // --------------------------
+  // Level20 (correct = ★)
+  // --------------------------
+  {
+    level: 20,
+    correctShape: "★",
+    shapes: [
+      { shape: "★", ...coords[1] },
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[5] },
+      { shape: "★", ...coords[8] },
+      { shape: "★", ...coords[13] },
+      { shape: "★", ...coords[14] },
+      { shape: "●", ...coords[0] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[6] },
+      { shape: "●", ...coords[15] },
+      { shape: "▲", ...coords[4] },
+      { shape: "▲", ...coords[7] },
+      { shape: "▲", ...coords[9] },
+      { shape: "▲", ...coords[12] },
+      { shape: "■", ...coords[10] },
+      { shape: "■", ...coords[11] },
+    ]
+  },
+
+  // --------------------------
+  // Level21 (correct = ●)
+  // --------------------------
+  {
+    level: 21,
+    correctShape: "●",
+    shapes: [
+      { shape: "●", ...coords[2] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[5] },
+      { shape: "●", ...coords[7] },
+      { shape: "●", ...coords[12] },
+      { shape: "●", ...coords[13] },
+      { shape: "▲", ...coords[1] },
+      { shape: "▲", ...coords[6] },
+      { shape: "▲", ...coords[8] },
+      { shape: "▲", ...coords[15] },
+      { shape: "■", ...coords[0] },
+      { shape: "■", ...coords[4] },
+      { shape: "■", ...coords[9] },
+      { shape: "■", ...coords[11] },
+      { shape: "★", ...coords[10] },
+      { shape: "★", ...coords[14] },
+    ]
+  },
+
+  // --------------------------
+  // Level22 (correct = ▲)
+  // --------------------------
+  {
+    level: 22,
+    correctShape: "▲",
+    shapes: [
+      { shape: "▲", ...coords[0] },
+      { shape: "▲", ...coords[3] },
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[10] },
+      { shape: "▲", ...coords[13] },
+      { shape: "▲", ...coords[15] },
+      { shape: "■", ...coords[1] },
+      { shape: "■", ...coords[6] },
+      { shape: "■", ...coords[8] },
+      { shape: "■", ...coords[12] },
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[4] },
+      { shape: "★", ...coords[7] },
+      { shape: "★", ...coords[9] },
+      { shape: "●", ...coords[11] },
+      { shape: "●", ...coords[14] },
+    ]
+  },
+
+  // --------------------------
+  // Level23 (correct = ■)
+  // --------------------------
+  {
+    level: 23,
+    correctShape: "■",
+    shapes: [
+      { shape: "■", ...coords[0] },
+      { shape: "■", ...coords[1] },
+      { shape: "■", ...coords[6] },
+      { shape: "■", ...coords[9] },
+      { shape: "■", ...coords[12] },
+      { shape: "■", ...coords[15] },
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[3] },
+      { shape: "★", ...coords[7] },
+      { shape: "★", ...coords[10] },
+      { shape: "●", ...coords[4] },
+      { shape: "●", ...coords[8] },
+      { shape: "●", ...coords[13] },
+      { shape: "●", ...coords[14] },
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[11] },
+    ]
+  },
+
+  // --------------------------
+  // Level24 (correct = ★)
+  // --------------------------
+  {
+    level: 24,
+    correctShape: "★",
+    shapes: [
+      { shape: "★", ...coords[1] },
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[5] },
+      { shape: "★", ...coords[8] },
+      { shape: "★", ...coords[13] },
+      { shape: "★", ...coords[14] },
+      { shape: "●", ...coords[0] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[6] },
+      { shape: "●", ...coords[15] },
+      { shape: "▲", ...coords[4] },
+      { shape: "▲", ...coords[7] },
+      { shape: "▲", ...coords[9] },
+      { shape: "▲", ...coords[12] },
+      { shape: "■", ...coords[10] },
+      { shape: "■", ...coords[11] },
+    ]
+  },
+
+  // --------------------------
+  // Level25 (correct = ●)
+  // --------------------------
+  {
+    level: 25,
+    correctShape: "●",
+    shapes: [
+      { shape: "●", ...coords[2] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[5] },
+      { shape: "●", ...coords[7] },
+      { shape: "●", ...coords[12] },
+      { shape: "●", ...coords[13] },
+      { shape: "▲", ...coords[1] },
+      { shape: "▲", ...coords[6] },
+      { shape: "▲", ...coords[8] },
+      { shape: "▲", ...coords[15] },
+      { shape: "■", ...coords[0] },
+      { shape: "■", ...coords[4] },
+      { shape: "■", ...coords[9] },
+      { shape: "■", ...coords[11] },
+      { shape: "★", ...coords[10] },
+      { shape: "★", ...coords[14] },
+    ]
+  },
+
+  // --------------------------
+  // Level26 (correct = ▲)
+  // --------------------------
+  {
+    level: 26,
+    correctShape: "▲",
+    shapes: [
+      { shape: "▲", ...coords[0] },
+      { shape: "▲", ...coords[3] },
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[10] },
+      { shape: "▲", ...coords[13] },
+      { shape: "▲", ...coords[15] },
+      { shape: "■", ...coords[1] },
+      { shape: "■", ...coords[6] },
+      { shape: "■", ...coords[8] },
+      { shape: "■", ...coords[12] },
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[4] },
+      { shape: "★", ...coords[7] },
+      { shape: "★", ...coords[9] },
+      { shape: "●", ...coords[11] },
+      { shape: "●", ...coords[14] },
+    ]
+  },
+
+  // --------------------------
+  // Level27 (correct = ■)
+  // --------------------------
+  {
+    level: 27,
+    correctShape: "■",
+    shapes: [
+      { shape: "■", ...coords[0] },
+      { shape: "■", ...coords[1] },
+      { shape: "■", ...coords[6] },
+      { shape: "■", ...coords[9] },
+      { shape: "■", ...coords[12] },
+      { shape: "■", ...coords[15] },
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[3] },
+      { shape: "★", ...coords[7] },
+      { shape: "★", ...coords[10] },
+      { shape: "●", ...coords[4] },
+      { shape: "●", ...coords[8] },
+      { shape: "●", ...coords[13] },
+      { shape: "●", ...coords[14] },
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[11] },
+    ]
+  },
+
+  // --------------------------
+  // Level28 (correct = ★)
+  // --------------------------
+  {
+    level: 28,
+    correctShape: "★",
+    shapes: [
+      { shape: "★", ...coords[1] },
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[5] },
+      { shape: "★", ...coords[8] },
+      { shape: "★", ...coords[13] },
+      { shape: "★", ...coords[14] },
+      { shape: "●", ...coords[0] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[6] },
+      { shape: "●", ...coords[15] },
+      { shape: "▲", ...coords[4] },
+      { shape: "▲", ...coords[7] },
+      { shape: "▲", ...coords[9] },
+      { shape: "▲", ...coords[12] },
+      { shape: "■", ...coords[10] },
+      { shape: "■", ...coords[11] },
+    ]
+  },
+
+  // --------------------------
+  // Level29 (correct = ●)
+  // --------------------------
+  {
+    level: 29,
+    correctShape: "●",
+    shapes: [
+      { shape: "●", ...coords[2] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[5] },
+      { shape: "●", ...coords[7] },
+      { shape: "●", ...coords[12] },
+      { shape: "●", ...coords[13] },
+      { shape: "▲", ...coords[1] },
+      { shape: "▲", ...coords[6] },
+      { shape: "▲", ...coords[8] },
+      { shape: "▲", ...coords[15] },
+      { shape: "■", ...coords[0] },
+      { shape: "■", ...coords[4] },
+      { shape: "■", ...coords[9] },
+      { shape: "■", ...coords[11] },
+      { shape: "★", ...coords[10] },
+      { shape: "★", ...coords[14] },
+    ]
+  },
+
+  // --------------------------
+  // Level30 (correct = ▲)
+  // --------------------------
+  {
+    level: 30,
+    correctShape: "▲",
+    shapes: [
+      { shape: "▲", ...coords[0] },
+      { shape: "▲", ...coords[3] },
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[10] },
+      { shape: "▲", ...coords[13] },
+      { shape: "▲", ...coords[15] },
+      { shape: "■", ...coords[1] },
+      { shape: "■", ...coords[6] },
+      { shape: "■", ...coords[8] },
+      { shape: "■", ...coords[12] },
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[4] },
+      { shape: "★", ...coords[7] },
+      { shape: "★", ...coords[9] },
+      { shape: "●", ...coords[11] },
+      { shape: "●", ...coords[14] },
+    ]
+  },
+///////////////////////////////////////////////////////////////
+// ここから Level31～50 (diff=1) : (5,4,4,3)
+///////////////////////////////////////////////////////////////
+
+// レベル31: correct="■" (5,4,4,3)
+{
+  level: 31,
+  correctShape: "■",
+  shapes: [
+    // "■" => [1,2,3,10,15]
+    { shape: "■", ...coords[0] },   // index=1
+    { shape: "■", ...coords[1] },   // index=2
+    { shape: "■", ...coords[2] },   // index=3
+    { shape: "■", ...coords[9] },   // index=10
+    { shape: "■", ...coords[14] },  // index=15
+
+    // "★" => [4,7,9,11]
+    { shape: "★", ...coords[3] },   // index=4
+    { shape: "★", ...coords[6] },   // index=7
+    { shape: "★", ...coords[8] },   // index=9
+    { shape: "★", ...coords[10] },  // index=11
+
+    // "●" => [5,8,12,14]
+    { shape: "●", ...coords[4] },   // index=5
+    { shape: "●", ...coords[7] },   // index=8
+    { shape: "●", ...coords[11] },  // index=12
+    { shape: "●", ...coords[13] },  // index=14
+
+    // "▲" => [6,13,16]
+    { shape: "▲", ...coords[5] },   // index=6
+    { shape: "▲", ...coords[12] },  // index=13
+    { shape: "▲", ...coords[15] },  // index=16
+  ]
+},
+
+// レベル32: correct="★"
+{
+  level: 32,
+  correctShape: "★",
+  shapes: [
+    // "★" => [2,4,6,10,15]
+    { shape: "★", ...coords[1] },   // index=2
+    { shape: "★", ...coords[3] },   // index=4
+    { shape: "★", ...coords[5] },   // index=6
+    { shape: "★", ...coords[9] },   // index=10
+    { shape: "★", ...coords[14] },  // index=15
+
+    // "●" => [1,5,8,14]
+    { shape: "●", ...coords[0] },   // index=1
+    { shape: "●", ...coords[4] },   // index=5
+    { shape: "●", ...coords[7] },   // index=8
+    { shape: "●", ...coords[13] },  // index=14
+
+    // "▲" => [3,7,9,12]
+    { shape: "▲", ...coords[2] },   // index=3
+    { shape: "▲", ...coords[6] },   // index=7
+    { shape: "▲", ...coords[8] },   // index=9
+    { shape: "▲", ...coords[11] },  // index=12
+
+    // "■" => [11,13,16]
+    { shape: "■", ...coords[10] },  // index=11
+    { shape: "■", ...coords[12] },  // index=13
+    { shape: "■", ...coords[15] },  // index=16
+  ]
+},
+
+// レベル33: correct="●"
+{
+  level: 33,
+  correctShape: "●",
+  shapes: [
+    // "●" => [1,3,7,9,14]
+    { shape: "●", ...coords[0] },   // index=1
+    { shape: "●", ...coords[2] },   // index=3
+    { shape: "●", ...coords[6] },   // index=7
+    { shape: "●", ...coords[8] },   // index=9
+    { shape: "●", ...coords[13] },  // index=14
+
+    // "▲" => [2,5,8,10]
+    { shape: "▲", ...coords[1] },   // index=2
+    { shape: "▲", ...coords[4] },   // index=5
+    { shape: "▲", ...coords[7] },   // index=8
+    { shape: "▲", ...coords[9] },   // index=10
+
+    // "■" => [4,6,11,13]
+    { shape: "■", ...coords[3] },   // index=4
+    { shape: "■", ...coords[5] },   // index=6
+    { shape: "■", ...coords[10] },  // index=11
+    { shape: "■", ...coords[12] },  // index=13
+
+    // "★" => [12,15,16]
+    { shape: "★", ...coords[11] },  // index=12
+    { shape: "★", ...coords[14] },  // index=15
+    { shape: "★", ...coords[15] },  // index=16
+  ]
+},
+
+// レベル34: correct="▲"
+{
+  level: 34,
+  correctShape: "▲",
+  shapes: [
+    // "▲" => [1,4,6,8,14]
+    { shape: "▲", ...coords[0] },   // index=1
+    { shape: "▲", ...coords[3] },   // index=4
+    { shape: "▲", ...coords[5] },   // index=6
+    { shape: "▲", ...coords[7] },   // index=8
+    { shape: "▲", ...coords[13] },  // index=14
+
+    // "■" => [2,5,9,12]
+    { shape: "■", ...coords[1] },   // index=2
+    { shape: "■", ...coords[4] },   // index=5
+    { shape: "■", ...coords[8] },   // index=9
+    { shape: "■", ...coords[11] },  // index=12
+
+    // "★" => [3,7,10,15]
+    { shape: "★", ...coords[2] },   // index=3
+    { shape: "★", ...coords[6] },   // index=7
+    { shape: "★", ...coords[9] },   // index=10
+    { shape: "★", ...coords[14] },  // index=15
+
+    // "●" => [11,13,16]
+    { shape: "●", ...coords[10] },  // index=11
+    { shape: "●", ...coords[12] },  // index=13
+    { shape: "●", ...coords[15] },  // index=16
+  ]
+},
+
+// -----------------------------------------------------------
+// Level35 (correct=■) : 同じ(5,4,4,3)パターン
+// -----------------------------------------------------------
+{
+  level: 35,
+  correctShape: "■",
+  shapes: [
+    { shape: "■", ...coords[0] },  // [1,2,3,10,15]
+    { shape: "■", ...coords[1] },
+    { shape: "■", ...coords[2] },
+    { shape: "■", ...coords[9] },
+    { shape: "■", ...coords[14] },
+
+    { shape: "★", ...coords[3] },  // [4,7,9,11]
+    { shape: "★", ...coords[6] },
+    { shape: "★", ...coords[8] },
+    { shape: "★", ...coords[10] },
+
+    { shape: "●", ...coords[4] },  // [5,8,12,14]
+    { shape: "●", ...coords[7] },
+    { shape: "●", ...coords[11] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[5] },  // [6,13,16]
+    { shape: "▲", ...coords[12] },
+    { shape: "▲", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level36 (correct=★)
+// -----------------------------------------------------------
+{
+  level: 36,
+  correctShape: "★",
+  shapes: [
+    { shape: "★", ...coords[1] },  // [2,4,6,10,15]
+    { shape: "★", ...coords[3] },
+    { shape: "★", ...coords[5] },
+    { shape: "★", ...coords[9] },
+    { shape: "★", ...coords[14] },
+
+    { shape: "●", ...coords[0] },  // [1,5,8,14]
+    { shape: "●", ...coords[4] },
+    { shape: "●", ...coords[7] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[2] },  // [3,7,9,12]
+    { shape: "▲", ...coords[6] },
+    { shape: "▲", ...coords[8] },
+    { shape: "▲", ...coords[11] },
+
+    { shape: "■", ...coords[10] }, // [11,13,16]
+    { shape: "■", ...coords[12] },
+    { shape: "■", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level37 (correct=●)
+// -----------------------------------------------------------
+{
+  level: 37,
+  correctShape: "●",
+  shapes: [
+    // "●" => [1,3,7,9,14]
+    { shape: "●", ...coords[0] },
+    { shape: "●", ...coords[2] },
+    { shape: "●", ...coords[6] },
+    { shape: "●", ...coords[8] },
+    { shape: "●", ...coords[13] },
+
+    // "▲" => [2,5,8,10]
+    { shape: "▲", ...coords[1] },
+    { shape: "▲", ...coords[4] },
+    { shape: "▲", ...coords[7] },
+    { shape: "▲", ...coords[9] },
+
+    // "■" => [4,6,11,13]
+    { shape: "■", ...coords[3] },
+    { shape: "■", ...coords[5] },
+    { shape: "■", ...coords[10] },
+    { shape: "■", ...coords[12] },
+
+    // "★" => [12,15,16]
+    { shape: "★", ...coords[11] },
+    { shape: "★", ...coords[14] },
+    { shape: "★", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level38 (correct=▲)
+// -----------------------------------------------------------
+{
+  level: 38,
+  correctShape: "▲",
+  shapes: [
+    { shape: "▲", ...coords[0] },  // [1,4,6,8,14]
+    { shape: "▲", ...coords[3] },
+    { shape: "▲", ...coords[5] },
+    { shape: "▲", ...coords[7] },
+    { shape: "▲", ...coords[13] },
+
+    { shape: "■", ...coords[1] },  // [2,5,9,12]
+    { shape: "■", ...coords[4] },
+    { shape: "■", ...coords[8] },
+    { shape: "■", ...coords[11] },
+
+    { shape: "★", ...coords[2] },  // [3,7,10,15]
+    { shape: "★", ...coords[6] },
+    { shape: "★", ...coords[9] },
+    { shape: "★", ...coords[14] },
+
+    { shape: "●", ...coords[10] }, // [11,13,16]
+    { shape: "●", ...coords[12] },
+    { shape: "●", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level39 (correct=■)
+// -----------------------------------------------------------
+{
+  level: 39,
+  correctShape: "■",
+  shapes: [
+    { shape: "■", ...coords[0] },
+    { shape: "■", ...coords[1] },
+    { shape: "■", ...coords[2] },
+    { shape: "■", ...coords[9] },
+    { shape: "■", ...coords[14] },
+
+    { shape: "★", ...coords[3] },
+    { shape: "★", ...coords[6] },
+    { shape: "★", ...coords[8] },
+    { shape: "★", ...coords[10] },
+
+    { shape: "●", ...coords[4] },
+    { shape: "●", ...coords[7] },
+    { shape: "●", ...coords[11] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[5] },
+    { shape: "▲", ...coords[12] },
+    { shape: "▲", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level40 (correct=★)
+// -----------------------------------------------------------
+{
+  level: 40,
+  correctShape: "★",
+  shapes: [
+    { shape: "★", ...coords[1] },
+    { shape: "★", ...coords[3] },
+    { shape: "★", ...coords[5] },
+    { shape: "★", ...coords[9] },
+    { shape: "★", ...coords[14] },
+
+    { shape: "●", ...coords[0] },
+    { shape: "●", ...coords[4] },
+    { shape: "●", ...coords[7] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[2] },
+    { shape: "▲", ...coords[6] },
+    { shape: "▲", ...coords[8] },
+    { shape: "▲", ...coords[11] },
+
+    { shape: "■", ...coords[10] },
+    { shape: "■", ...coords[12] },
+    { shape: "■", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level41 (correct=●)
+// -----------------------------------------------------------
+{
+  level: 41,
+  correctShape: "●",
+  shapes: [
+    { shape: "●", ...coords[0] },
+    { shape: "●", ...coords[2] },
+    { shape: "●", ...coords[6] },
+    { shape: "●", ...coords[8] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[1] },
+    { shape: "▲", ...coords[4] },
+    { shape: "▲", ...coords[7] },
+    { shape: "▲", ...coords[9] },
+
+    { shape: "■", ...coords[3] },
+    { shape: "■", ...coords[5] },
+    { shape: "■", ...coords[10] },
+    { shape: "■", ...coords[12] },
+
+    { shape: "★", ...coords[11] },
+    { shape: "★", ...coords[14] },
+    { shape: "★", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level42 (correct=▲)
+// -----------------------------------------------------------
+{
+  level: 42,
+  correctShape: "▲",
+  shapes: [
+    { shape: "▲", ...coords[0] },
+    { shape: "▲", ...coords[3] },
+    { shape: "▲", ...coords[5] },
+    { shape: "▲", ...coords[7] },
+    { shape: "▲", ...coords[13] },
+
+    { shape: "■", ...coords[1] },
+    { shape: "■", ...coords[4] },
+    { shape: "■", ...coords[8] },
+    { shape: "■", ...coords[11] },
+
+    { shape: "★", ...coords[2] },
+    { shape: "★", ...coords[6] },
+    { shape: "★", ...coords[9] },
+    { shape: "★", ...coords[14] },
+
+    { shape: "●", ...coords[10] },
+    { shape: "●", ...coords[12] },
+    { shape: "●", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level43 (correct=■)
+// -----------------------------------------------------------
+{
+  level: 43,
+  correctShape: "■",
+  shapes: [
+    { shape: "■", ...coords[0] },
+    { shape: "■", ...coords[1] },
+    { shape: "■", ...coords[2] },
+    { shape: "■", ...coords[9] },
+    { shape: "■", ...coords[14] },
+
+    { shape: "★", ...coords[3] },
+    { shape: "★", ...coords[6] },
+    { shape: "★", ...coords[8] },
+    { shape: "★", ...coords[10] },
+
+    { shape: "●", ...coords[4] },
+    { shape: "●", ...coords[7] },
+    { shape: "●", ...coords[11] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[5] },
+    { shape: "▲", ...coords[12] },
+    { shape: "▲", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level44 (correct=★)
+// -----------------------------------------------------------
+{
+  level: 44,
+  correctShape: "★",
+  shapes: [
+    { shape: "★", ...coords[1] },
+    { shape: "★", ...coords[3] },
+    { shape: "★", ...coords[5] },
+    { shape: "★", ...coords[9] },
+    { shape: "★", ...coords[14] },
+
+    { shape: "●", ...coords[0] },
+    { shape: "●", ...coords[4] },
+    { shape: "●", ...coords[7] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[2] },
+    { shape: "▲", ...coords[6] },
+    { shape: "▲", ...coords[8] },
+    { shape: "▲", ...coords[11] },
+
+    { shape: "■", ...coords[10] },
+    { shape: "■", ...coords[12] },
+    { shape: "■", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level45 (correct=●)
+// -----------------------------------------------------------
+{
+  level: 45,
+  correctShape: "●",
+  shapes: [
+    { shape: "●", ...coords[0] },
+    { shape: "●", ...coords[2] },
+    { shape: "●", ...coords[6] },
+    { shape: "●", ...coords[8] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[1] },
+    { shape: "▲", ...coords[4] },
+    { shape: "▲", ...coords[7] },
+    { shape: "▲", ...coords[9] },
+
+    { shape: "■", ...coords[3] },
+    { shape: "■", ...coords[5] },
+    { shape: "■", ...coords[10] },
+    { shape: "■", ...coords[12] },
+
+    { shape: "★", ...coords[11] },
+    { shape: "★", ...coords[14] },
+    { shape: "★", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level46 (correct=▲)
+// -----------------------------------------------------------
+{
+  level: 46,
+  correctShape: "▲",
+  shapes: [
+    { shape: "▲", ...coords[0] },
+    { shape: "▲", ...coords[3] },
+    { shape: "▲", ...coords[5] },
+    { shape: "▲", ...coords[7] },
+    { shape: "▲", ...coords[13] },
+
+    { shape: "■", ...coords[1] },
+    { shape: "■", ...coords[4] },
+    { shape: "■", ...coords[8] },
+    { shape: "■", ...coords[11] },
+
+    { shape: "★", ...coords[2] },
+    { shape: "★", ...coords[6] },
+    { shape: "★", ...coords[9] },
+    { shape: "★", ...coords[14] },
+
+    { shape: "●", ...coords[10] },
+    { shape: "●", ...coords[12] },
+    { shape: "●", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level47 (correct=■)
+// -----------------------------------------------------------
+{
+  level: 47,
+  correctShape: "■",
+  shapes: [
+    { shape: "■", ...coords[0] },
+    { shape: "■", ...coords[1] },
+    { shape: "■", ...coords[2] },
+    { shape: "■", ...coords[9] },
+    { shape: "■", ...coords[14] },
+
+    { shape: "★", ...coords[3] },
+    { shape: "★", ...coords[6] },
+    { shape: "★", ...coords[8] },
+    { shape: "★", ...coords[10] },
+
+    { shape: "●", ...coords[4] },
+    { shape: "●", ...coords[7] },
+    { shape: "●", ...coords[11] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[5] },
+    { shape: "▲", ...coords[12] },
+    { shape: "▲", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level48 (correct=★)
+// -----------------------------------------------------------
+{
+  level: 48,
+  correctShape: "★",
+  shapes: [
+    { shape: "★", ...coords[1] },
+    { shape: "★", ...coords[3] },
+    { shape: "★", ...coords[5] },
+    { shape: "★", ...coords[9] },
+    { shape: "★", ...coords[14] },
+
+    { shape: "●", ...coords[0] },
+    { shape: "●", ...coords[4] },
+    { shape: "●", ...coords[7] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[2] },
+    { shape: "▲", ...coords[6] },
+    { shape: "▲", ...coords[8] },
+    { shape: "▲", ...coords[11] },
+
+    { shape: "■", ...coords[10] },
+    { shape: "■", ...coords[12] },
+    { shape: "■", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level49 (correct=●)
+// -----------------------------------------------------------
+{
+  level: 49,
+  correctShape: "●",
+  shapes: [
+    { shape: "●", ...coords[0] },
+    { shape: "●", ...coords[2] },
+    { shape: "●", ...coords[6] },
+    { shape: "●", ...coords[8] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[1] },
+    { shape: "▲", ...coords[4] },
+    { shape: "▲", ...coords[7] },
+    { shape: "▲", ...coords[9] },
+
+    { shape: "■", ...coords[3] },
+    { shape: "■", ...coords[5] },
+    { shape: "■", ...coords[10] },
+    { shape: "■", ...coords[12] },
+
+    { shape: "★", ...coords[11] },
+    { shape: "★", ...coords[14] },
+    { shape: "★", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level50 (correct=▲)
+// -----------------------------------------------------------
+{
+  level: 50,
+  correctShape: "▲",
+  shapes: [
+    { shape: "▲", ...coords[0] },
+    { shape: "▲", ...coords[3] },
+    { shape: "▲", ...coords[5] },
+    { shape: "▲", ...coords[7] },
+    { shape: "▲", ...coords[13] },
+
+    { shape: "■", ...coords[1] },
+    { shape: "■", ...coords[4] },
+    { shape: "■", ...coords[8] },
+    { shape: "■", ...coords[11] },
+
+    { shape: "★", ...coords[2] },
+    { shape: "★", ...coords[6] },
+    { shape: "★", ...coords[9] },
+    { shape: "★", ...coords[14] },
+
+    { shape: "●", ...coords[10] },
+    { shape: "●", ...coords[12] },
+    { shape: "●", ...coords[15] },
+  ]
+},
+];
+
 
   /* ================================
      イベントリスナー
   =================================*/
-
-  // スタートボタン
-  startBtn.addEventListener('click', () => {
-    startSession();
-  });
-
-  // リスタートボタン
+  startBtn.addEventListener('click', () => startSession());
   restartBtn.addEventListener('click', () => {
     endSession(true); // 強制終了
-    // スタート画面を再び表示
     startScreen.style.display = 'block';
     restartBtn.style.display = 'none';
   });
 
-  // GoodUI側の回答ボタン
-  buttons.forEach(button => {
-    button.addEventListener('click', () => {
-      if (!sessionActive) return;
-      if (isBadUI) return; // BadUIモード中は無効
-      const selectedShape = button.getAttribute('data-shape');
+  // GoodUIの形ボタン
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!sessionActive || isBadUI) return;
+      const selectedShape = btn.getAttribute('data-shape');
       processShapeSelection(selectedShape);
     });
   });
 
-  // BadUI側 「Answer」ボタン
+  // BadUI
   answerBtn.addEventListener('click', () => {
     if (!sessionActive) return;
     openBadUIModal();
   });
 
-  // ハンバーガーメニューのトグル
+  // ハンバーガーメニュー
   hamburgerMenuBtn.addEventListener('click', () => {
     menuPanel.classList.toggle('open');
   });
-
-  // メニュー内の閉じるボタン(×)
   closeMenuBtn.addEventListener('click', () => {
     menuPanel.classList.remove('open');
   });
-
-  // UI切り替えボタン
   toggleUIBtn.addEventListener('click', () => {
     isBadUI = !isBadUI;
     updateUIVisibility();
   });
 
-  // CSVダウンロードボタン
-  csvDownloadBtn.addEventListener('click', () => {
-    downloadCSV();
-  });
+  // CSV
+  csvDownloadBtn.addEventListener('click', () => downloadCSV());
 
   /* ================================
      セッション開始
   =================================*/
   function startSession() {
-    // スタート画面を非表示
     startScreen.style.display = 'none';
 
     sessionActive = true;
     sessionData.playCount++;
     sessionData.sessionStart = new Date();
     currentLevel = 1;
-    sessionData.levels = [];  // 前回の結果をクリア
+    sessionData.levels = [];
 
-    // 入力されたプレイ時間(秒)を取得
+    // 時間取得
     let totalSeconds = parseInt(playTimeInput.value, 10) || 180;
     startTimer(totalSeconds);
 
     startPuzzle();
 
-    csvDownloadBtn.style.display = 'none'; 
-    restartBtn.style.display = 'block'; // リスタートを有効化
+    csvDownloadBtn.style.display = 'none';
+    restartBtn.style.display = 'block';
   }
 
   /* ================================
-     タイマー処理
+     タイマー開始
   =================================*/
   function startTimer(seconds) {
     let remaining = seconds;
@@ -494,75 +2004,38 @@
   }
 
   /* ================================
-     Puzzle開始（レベル生成）
+     Puzzle開始（固定データを配置）
   =================================*/
   function startPuzzle() {
     if (!sessionActive) return;
 
-    // 既存の図形を消す
-    gameContainer.querySelectorAll('.shape').forEach(el => el.remove());
+    // 既存の図形を削除
+    puzzleArea.querySelectorAll('.shape').forEach(el => el.remove());
 
     levelDisplay.textContent = `Level ${currentLevel} / ${totalLevels}`;
     levelStartTime = Date.now();
 
-    // 正解形をランダムで選択
-    const targetIndex = Math.floor(Math.random() * shapes.length);
-    correctShape = shapes[targetIndex];
+    // レベルの問題取得
+    if (currentLevel - 1 < puzzleData.length) {
+      const puzzle = puzzleData[currentLevel - 1];
+      correctShape = puzzle.correctShape;
 
-    // レベルごとの図形数 (例)
-    const totalShapes = 12;
-    // レベル進行で正解数を少しずつ減らしていくサンプル
-    const T = Math.max(3, Math.round(5 - (currentLevel - 1) * 2 / (totalLevels - 1)));
+      // shapes を配置 (#puzzle-area内)
+      puzzle.shapes.forEach(obj => {
+        const shapeDiv = document.createElement('div');
+        shapeDiv.classList.add('shape');
+        shapeDiv.textContent = obj.shape;
+        shapeDiv.style.left = obj.x + "px";
+        shapeDiv.style.top  = obj.y + "px";
+        puzzleArea.appendChild(shapeDiv);
+      });
+    } else {
+      // データが尽きたら終了
+      endSession(false);
+      return;
+    }
 
-    // カウント分布
-    const counts = {};
-    counts[correctShape] = T;
-    const remainder = totalShapes - T;
-    const base = Math.floor(remainder / 3);
-    let extra = remainder % 3;
-    shapes.forEach(shape => {
-      if (shape === correctShape) return;
-      let cnt = base;
-      if (extra > 0) {
-        cnt++;
-        extra--;
-      }
-      counts[shape] = Math.max(cnt, 1);
-    });
-
-    const placedPositions = [];
-    const shapeSize = 30;
-
-    // 画面サイズ取得
-    const containerWidth = gameContainer.clientWidth;
-    const containerHeight = gameContainer.clientHeight;
-    // 図形がトップ(0px)に行かないように60px開ける
-    const topOffset = 60; 
-
-    Object.keys(counts).forEach(shape => {
-      for (let i = 0; i < counts[shape]; i++) {
-        const el = document.createElement('div');
-        el.classList.add('shape');
-        el.textContent = shape;
-
-        let pos;
-        let attempts = 0;
-        do {
-          const x = getRandomInt(0, containerWidth - shapeSize);
-          const y = getRandomInt(topOffset, containerHeight - shapeSize);
-          pos = {x, y, width: shapeSize, height: shapeSize};
-          attempts++;
-        } while (checkOverlap(pos, placedPositions) && attempts < 100);
-
-        placedPositions.push(pos);
-        el.style.left = pos.x + 'px';
-        el.style.top = pos.y + 'px';
-
-        gameContainer.appendChild(el);
-      }
-    });
-
-    // UI 表示更新
+    // UI表示を反映
     updateUIVisibility();
   }
 
@@ -580,16 +2053,15 @@
   }
 
   /* ================================
-     BadUI: モーダルで形ボタンを提示
+     BadUI: モーダルで形選択
   =================================*/
   function openBadUIModal() {
-    const shapeArray = shuffleArray([...shapes]);
+    const shapeArray = shuffleArray([...SHAPES]);
     baduiShapeContainer.innerHTML = '';
 
     shapeArray.forEach(s => {
       const btn = document.createElement('button');
       btn.classList.add('badui-shape-btn');
-      // ●/■ は文字が大きめ
       if (s === "●" || s === "■") {
         btn.classList.add('font16');
       } else {
@@ -607,7 +2079,6 @@
   }
 
   function showConfirmUI(selectedShape) {
-    // ボタンを無効化
     [...baduiShapeContainer.querySelectorAll('button')].forEach(b => {
       b.disabled = true;
     });
@@ -617,12 +2088,12 @@
     const arrayBtns = Array.from(confirmBtns);
     shuffleArray(arrayBtns);
 
-    // ランダムに並び替え
+    // 並べ替え
     confirmContainer.appendChild(arrayBtns[0]);
     confirmContainer.appendChild(arrayBtns[1]);
     confirmContainer.appendChild(arrayBtns[2]);
 
-    // ランダムで1つ highlight
+    // ランダムに1つハイライト
     arrayBtns.forEach(b => b.classList.remove('highlight'));
     const randomIndex = Math.floor(Math.random() * arrayBtns.length);
     arrayBtns[randomIndex].classList.add('highlight');
@@ -633,11 +2104,7 @@
         if (choice === 'go') {
           closeModal();
           processShapeSelection(selectedShape);
-        } else if (choice === 'no') {
-          // no -> モーダル閉じる
-          closeModal();
-        } else if (choice === 'return') {
-          // 戻る
+        } else if (choice === 'no' || choice === 'return') {
           closeModal();
         }
       };
@@ -654,6 +2121,7 @@
   function processShapeSelection(selectedShape) {
     if (!sessionActive) return;
 
+    // 一致判定
     if (selectedShape === correctShape) {
       // 正解
       const clearTime = Date.now() - levelStartTime;
@@ -663,25 +2131,18 @@
         mode: isBadUI ? "BadUI" : "GoodUI"
       });
 
-      // GoodUIならトーストで⭕️表示
-      if (!isBadUI) {
-        showToast("⭕️");
-      }
-      // 次レベルへ
+      if (!isBadUI) showToast("⭕️");
+
+      // 次へ or 終了
       if (currentLevel < totalLevels) {
         currentLevel++;
         startPuzzle();
       } else {
-        // 全レベル終了
         endSession(false);
       }
     } else {
       // 不正解
-      if (!isBadUI) {
-        // GoodUIならトーストで❌表示
-        showToast("❌");
-      }
-      // BadUIの不正解通知はなし(廃止)
+      if (!isBadUI) showToast("❌");
     }
   }
 
@@ -693,8 +2154,7 @@
     timerInterval = null;
     sessionActive = false;
 
-    // ゲーム内の図形を消去
-    gameContainer.querySelectorAll('.shape').forEach(el => el.remove());
+    puzzleArea.querySelectorAll('.shape').forEach(el => el.remove());
 
     if (!isForceEnd) {
       // 時間切れ or 全レベル終了
@@ -728,38 +2188,20 @@
   }
 
   /* ================================
-     トースト表示 (GoodUIのみ)
+     トースト通知 (GoodUIのみ)
   =================================*/
   function showToast(icon) {
     toast.textContent = icon;
     toast.style.display = 'block';
-    // 3秒後に消す
     setTimeout(() => {
       toast.style.display = 'none';
-    }, 3000);
+    }, 1500);
   }
 
   /* ================================
-     汎用ユーティリティ
+     ユーティリティ
   =================================*/
-  function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min)) + min;
-  }
-
-  function checkOverlap(pos, placed) {
-    for (let other of placed) {
-      if (pos.x < other.x + other.width &&
-          pos.x + pos.width > other.x &&
-          pos.y < other.y + other.height &&
-          pos.y + pos.height > other.y) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   function shuffleArray(array) {
-    // Fisher–Yates shuffle
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [array[i], array[j]] = [array[j], array[i]];
