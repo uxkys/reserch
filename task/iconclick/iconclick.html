@@ -501,43 +501,11 @@ const puzzleData = [
 
   // -----------------------------------------------------------
   // Level3 (diff=4) : (8,4,2,2)
-  //   correctShape = "■"
-  //   分布: 「■×8, ★×4, ●×2, ▲×2」
-  // -----------------------------------------------------------
-  {
-    level: 3,
-    correctShape: "■",
-    shapes: [
-      // "■" x 8
-      { shape: "■", ...coords[0] },  // (60,20)
-      { shape: "■", ...coords[2] },  // (220,20)
-      { shape: "■", ...coords[5] },  // (140,70)
-      { shape: "■", ...coords[7] },  // (300,70)
-      { shape: "■", ...coords[8] },  // (60,120)
-      { shape: "■", ...coords[10] }, // (220,120)
-      { shape: "■", ...coords[13] }, // (140,170)
-      { shape: "■", ...coords[15] }, // (300,170)
-      // "★" x 4
-      { shape: "★", ...coords[1] },  // (140,20)
-      { shape: "★", ...coords[4] },  // (60,70)
-      { shape: "★", ...coords[6] },  // (220,70)
-      { shape: "★", ...coords[9] },  // (140,120)
-      // "●" x 2
-      { shape: "●", ...coords[11] }, // (300,120)
-      { shape: "●", ...coords[12] }, // (60,170)
-      // "▲" x 2
-      { shape: "▲", ...coords[3] },  // (300,20)
-      { shape: "▲", ...coords[14] }, // (220,170)
-    ]
-  },
-
-  // -----------------------------------------------------------
-  // Level4 (diff=4) : (8,4,2,2)
   //   correctShape = "★"
   //   分布: 「★×8, ●×4, ▲×2, ■×2」
   // -----------------------------------------------------------
   {
-    level: 4,
+    level: 3,
     correctShape: "★",
     shapes: [
       // "★" x 8
@@ -560,6 +528,38 @@ const puzzleData = [
       // "■" x 2
       { shape: "■", ...coords[3] },
       { shape: "■", ...coords[14] },
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level4 (diff=4) : (8,4,2,2)
+  //   correctShape = "■"
+  //   分布: 「■×8, ★×4, ●×2, ▲×2」
+  // -----------------------------------------------------------
+  {
+    level: 4,
+    correctShape: "■",
+    shapes: [
+      // "■" x 8
+      { shape: "■", ...coords[0] },  // (60,20)
+      { shape: "■", ...coords[2] },  // (220,20)
+      { shape: "■", ...coords[5] },  // (140,70)
+      { shape: "■", ...coords[7] },  // (300,70)
+      { shape: "■", ...coords[8] },  // (60,120)
+      { shape: "■", ...coords[10] }, // (220,120)
+      { shape: "■", ...coords[13] }, // (140,170)
+      { shape: "■", ...coords[15] }, // (300,170)
+      // "★" x 4
+      { shape: "★", ...coords[1] },  // (140,20)
+      { shape: "★", ...coords[4] },  // (60,70)
+      { shape: "★", ...coords[6] },  // (220,70)
+      { shape: "★", ...coords[9] },  // (140,120)
+      // "●" x 2
+      { shape: "●", ...coords[11] }, // (300,120)
+      { shape: "●", ...coords[12] }, // (60,170)
+      // "▲" x 2
+      { shape: "▲", ...coords[3] },  // (300,20)
+      { shape: "▲", ...coords[14] }, // (220,170)
     ]
   },
 
@@ -629,11 +629,43 @@ const puzzleData = [
 
   // -----------------------------------------------------------
   // Level7 (diff=3) : (7,4,4,1)
+  //   correctShape = "●"
+  //   分布: 「●×7, ▲×4, ■×4, ★×1」
+  // -----------------------------------------------------------
+  {
+    level: 7,
+    correctShape: "●",
+    shapes: [
+      // "●" x 7
+      { shape: "●", ...coords[0] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[6] },
+      { shape: "●", ...coords[8] },
+      { shape: "●", ...coords[11] },
+      { shape: "●", ...coords[13] },
+      { shape: "●", ...coords[15] },
+      // "▲" x 4
+      { shape: "▲", ...coords[1] },
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[7] },
+      { shape: "▲", ...coords[9] },
+      // "■" x 4
+      { shape: "■", ...coords[2] },
+      { shape: "■", ...coords[4] },
+      { shape: "■", ...coords[10] },
+      { shape: "■", ...coords[12] },
+      // "★" x 1
+      { shape: "★", ...coords[14] },
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level8 (diff=3) : (7,4,4,1)
   //   correctShape = "■"
   //   分布: 「■×7, ★×4, ●×4, ▲×1」
   // -----------------------------------------------------------
   {
-    level: 7,
+    level: 8,
     correctShape: "■",
     shapes: [
       // "■" x 7
@@ -660,12 +692,12 @@ const puzzleData = [
   },
 
   // -----------------------------------------------------------
-  // Level8 (diff=3) : (7,4,4,1)
+  // Level9 (diff=3) : (7,4,4,1)
   //   correctShape = "★"
   //   分布: 「★×7, ●×4, ▲×4, ■×1」
   // -----------------------------------------------------------
   {
-    level: 8,
+    level: 9,
     correctShape: "★",
     shapes: [
       // "★" x 7
@@ -691,37 +723,6 @@ const puzzleData = [
     ]
   },
 
-  // -----------------------------------------------------------
-  // Level9 (diff=3) : (7,4,4,1)
-  //   correctShape = "●"
-  //   分布: 「●×7, ▲×4, ■×4, ★×1」
-  // -----------------------------------------------------------
-  {
-    level: 9,
-    correctShape: "●",
-    shapes: [
-      // "●" x 7
-      { shape: "●", ...coords[0] },
-      { shape: "●", ...coords[3] },
-      { shape: "●", ...coords[6] },
-      { shape: "●", ...coords[8] },
-      { shape: "●", ...coords[11] },
-      { shape: "●", ...coords[13] },
-      { shape: "●", ...coords[15] },
-      // "▲" x 4
-      { shape: "▲", ...coords[1] },
-      { shape: "▲", ...coords[5] },
-      { shape: "▲", ...coords[7] },
-      { shape: "▲", ...coords[9] },
-      // "■" x 4
-      { shape: "■", ...coords[2] },
-      { shape: "■", ...coords[4] },
-      { shape: "■", ...coords[10] },
-      { shape: "■", ...coords[12] },
-      // "★" x 1
-      { shape: "★", ...coords[14] },
-    ]
-  },
 
   // -----------------------------------------------------------
   // Level10 (diff=3) : (7,4,4,1)
@@ -786,14 +787,46 @@ const puzzleData = [
       { shape: "▲", ...coords[14] },
     ]
   },
-
+  
   // -----------------------------------------------------------
   // Level12 (diff=3) : (7,4,4,1)
+  //   correctShape = "●"
+  //   分布: 「●×7, ▲×4, ■×4, ★×1」
+  // -----------------------------------------------------------
+  {
+    level: 12,
+    correctShape: "●",
+    shapes: [
+      // "●" x 7
+      { shape: "●", ...coords[0] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[6] },
+      { shape: "●", ...coords[8] },
+      { shape: "●", ...coords[11] },
+      { shape: "●", ...coords[13] },
+      { shape: "●", ...coords[15] },
+      // "▲" x 4
+      { shape: "▲", ...coords[1] },
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[7] },
+      { shape: "▲", ...coords[9] },
+      // "■" x 4
+      { shape: "■", ...coords[2] },
+      { shape: "■", ...coords[4] },
+      { shape: "■", ...coords[10] },
+      { shape: "■", ...coords[12] },
+      // "★" x 1
+      { shape: "★", ...coords[14] },
+    ]
+  },
+
+  // -----------------------------------------------------------
+  // Level13 (diff=3) : (7,4,4,1)
   //   correctShape = "★"
   //   分布: 「★×7, ●×4, ▲×4, ■×1」
   // -----------------------------------------------------------
   {
-    level: 12,
+    level: 13,
     correctShape: "★",
     shapes: [
       // "★" x 7
@@ -819,37 +852,6 @@ const puzzleData = [
     ]
   },
 
-  // -----------------------------------------------------------
-  // Level13 (diff=3) : (7,4,4,1)
-  //   correctShape = "●"
-  //   分布: 「●×7, ▲×4, ■×4, ★×1」
-  // -----------------------------------------------------------
-  {
-    level: 13,
-    correctShape: "●",
-    shapes: [
-      // "●" x 7
-      { shape: "●", ...coords[0] },
-      { shape: "●", ...coords[3] },
-      { shape: "●", ...coords[6] },
-      { shape: "●", ...coords[8] },
-      { shape: "●", ...coords[11] },
-      { shape: "●", ...coords[13] },
-      { shape: "●", ...coords[15] },
-      // "▲" x 4
-      { shape: "▲", ...coords[1] },
-      { shape: "▲", ...coords[5] },
-      { shape: "▲", ...coords[7] },
-      { shape: "▲", ...coords[9] },
-      // "■" x 4
-      { shape: "■", ...coords[2] },
-      { shape: "■", ...coords[4] },
-      { shape: "■", ...coords[10] },
-      { shape: "■", ...coords[12] },
-      // "★" x 1
-      { shape: "★", ...coords[14] },
-    ]
-  },
 
   // -----------------------------------------------------------
   // Level14 (diff=3) : (7,4,4,1)
@@ -919,10 +921,40 @@ const puzzleData = [
   },
 
   // --------------------------
-  // Level16 (correct = ★)
+  // Level16 (correct = ●)
   // --------------------------
   {
     level: 16,
+    correctShape: "●",
+    shapes: [
+      // ● × 6 → [3,4,6,8,13,14]
+      { shape: "●", ...coords[2] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[5] },
+      { shape: "●", ...coords[7] },
+      { shape: "●", ...coords[12] },
+      { shape: "●", ...coords[13] },
+      // ▲ × 4 → [2,7,9,16]
+      { shape: "▲", ...coords[1] },
+      { shape: "▲", ...coords[6] },
+      { shape: "▲", ...coords[8] },
+      { shape: "▲", ...coords[15] },
+      // ■ × 4 → [1,5,10,12]
+      { shape: "■", ...coords[0] },
+      { shape: "■", ...coords[4] },
+      { shape: "■", ...coords[9] },
+      { shape: "■", ...coords[11] },
+      // ★ × 2 → [11,15]
+      { shape: "★", ...coords[10] },
+      { shape: "★", ...coords[14] },
+    ]
+  },
+  
+  // --------------------------
+  // Level17 (correct = ★)
+  // --------------------------
+  {
+    level: 17,
     correctShape: "★",
     shapes: [
       // ★ × 6 → [2,3,6,9,14,15]
@@ -948,35 +980,6 @@ const puzzleData = [
     ]
   },
 
-  // --------------------------
-  // Level17 (correct = ●)
-  // --------------------------
-  {
-    level: 17,
-    correctShape: "●",
-    shapes: [
-      // ● × 6 → [3,4,6,8,13,14]
-      { shape: "●", ...coords[2] },
-      { shape: "●", ...coords[3] },
-      { shape: "●", ...coords[5] },
-      { shape: "●", ...coords[7] },
-      { shape: "●", ...coords[12] },
-      { shape: "●", ...coords[13] },
-      // ▲ × 4 → [2,7,9,16]
-      { shape: "▲", ...coords[1] },
-      { shape: "▲", ...coords[6] },
-      { shape: "▲", ...coords[8] },
-      { shape: "▲", ...coords[15] },
-      // ■ × 4 → [1,5,10,12]
-      { shape: "■", ...coords[0] },
-      { shape: "■", ...coords[4] },
-      { shape: "■", ...coords[9] },
-      { shape: "■", ...coords[11] },
-      // ★ × 2 → [11,15]
-      { shape: "★", ...coords[10] },
-      { shape: "★", ...coords[14] },
-    ]
-  },
 
   // --------------------------
   // Level18 (correct = ▲)
@@ -1036,36 +1039,10 @@ const puzzleData = [
   },
 
   // --------------------------
-  // Level20 (correct = ★)
+  // Level20 (correct = ●)
   // --------------------------
   {
     level: 20,
-    correctShape: "★",
-    shapes: [
-      { shape: "★", ...coords[1] },
-      { shape: "★", ...coords[2] },
-      { shape: "★", ...coords[5] },
-      { shape: "★", ...coords[8] },
-      { shape: "★", ...coords[13] },
-      { shape: "★", ...coords[14] },
-      { shape: "●", ...coords[0] },
-      { shape: "●", ...coords[3] },
-      { shape: "●", ...coords[6] },
-      { shape: "●", ...coords[15] },
-      { shape: "▲", ...coords[4] },
-      { shape: "▲", ...coords[7] },
-      { shape: "▲", ...coords[9] },
-      { shape: "▲", ...coords[12] },
-      { shape: "■", ...coords[10] },
-      { shape: "■", ...coords[11] },
-    ]
-  },
-
-  // --------------------------
-  // Level21 (correct = ●)
-  // --------------------------
-  {
-    level: 21,
     correctShape: "●",
     shapes: [
       { shape: "●", ...coords[2] },
@@ -1084,6 +1061,32 @@ const puzzleData = [
       { shape: "■", ...coords[11] },
       { shape: "★", ...coords[10] },
       { shape: "★", ...coords[14] },
+    ]
+  },
+
+  // --------------------------
+  // Level21 (correct = ★)
+  // --------------------------
+  {
+    level: 21,
+    correctShape: "★",
+    shapes: [
+      { shape: "★", ...coords[1] },
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[5] },
+      { shape: "★", ...coords[8] },
+      { shape: "★", ...coords[13] },
+      { shape: "★", ...coords[14] },
+      { shape: "●", ...coords[0] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[6] },
+      { shape: "●", ...coords[15] },
+      { shape: "▲", ...coords[4] },
+      { shape: "▲", ...coords[7] },
+      { shape: "▲", ...coords[9] },
+      { shape: "▲", ...coords[12] },
+      { shape: "■", ...coords[10] },
+      { shape: "■", ...coords[11] },
     ]
   },
 
@@ -1140,36 +1143,10 @@ const puzzleData = [
   },
 
   // --------------------------
-  // Level24 (correct = ★)
+  // Level24 (correct = ●)
   // --------------------------
   {
     level: 24,
-    correctShape: "★",
-    shapes: [
-      { shape: "★", ...coords[1] },
-      { shape: "★", ...coords[2] },
-      { shape: "★", ...coords[5] },
-      { shape: "★", ...coords[8] },
-      { shape: "★", ...coords[13] },
-      { shape: "★", ...coords[14] },
-      { shape: "●", ...coords[0] },
-      { shape: "●", ...coords[3] },
-      { shape: "●", ...coords[6] },
-      { shape: "●", ...coords[15] },
-      { shape: "▲", ...coords[4] },
-      { shape: "▲", ...coords[7] },
-      { shape: "▲", ...coords[9] },
-      { shape: "▲", ...coords[12] },
-      { shape: "■", ...coords[10] },
-      { shape: "■", ...coords[11] },
-    ]
-  },
-
-  // --------------------------
-  // Level25 (correct = ●)
-  // --------------------------
-  {
-    level: 25,
     correctShape: "●",
     shapes: [
       { shape: "●", ...coords[2] },
@@ -1188,6 +1165,32 @@ const puzzleData = [
       { shape: "■", ...coords[11] },
       { shape: "★", ...coords[10] },
       { shape: "★", ...coords[14] },
+    ]
+  },
+
+  // --------------------------
+  // Level25 (correct = ★)
+  // --------------------------
+  {
+    level: 25,
+    correctShape: "★",
+    shapes: [
+      { shape: "★", ...coords[1] },
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[5] },
+      { shape: "★", ...coords[8] },
+      { shape: "★", ...coords[13] },
+      { shape: "★", ...coords[14] },
+      { shape: "●", ...coords[0] },
+      { shape: "●", ...coords[3] },
+      { shape: "●", ...coords[6] },
+      { shape: "●", ...coords[15] },
+      { shape: "▲", ...coords[4] },
+      { shape: "▲", ...coords[7] },
+      { shape: "▲", ...coords[9] },
+      { shape: "▲", ...coords[12] },
+      { shape: "■", ...coords[10] },
+      { shape: "■", ...coords[11] },
     ]
   },
 
@@ -1270,10 +1273,37 @@ const puzzleData = [
   },
 
   // --------------------------
-  // Level29 (correct = ●)
+  // Level29 (correct = ▲)
   // --------------------------
   {
     level: 29,
+    correctShape: "▲",
+    shapes: [
+      { shape: "▲", ...coords[0] },
+      { shape: "▲", ...coords[3] },
+      { shape: "▲", ...coords[5] },
+      { shape: "▲", ...coords[10] },
+      { shape: "▲", ...coords[13] },
+      { shape: "▲", ...coords[15] },
+      { shape: "■", ...coords[1] },
+      { shape: "■", ...coords[6] },
+      { shape: "■", ...coords[8] },
+      { shape: "■", ...coords[12] },
+      { shape: "★", ...coords[2] },
+      { shape: "★", ...coords[4] },
+      { shape: "★", ...coords[7] },
+      { shape: "★", ...coords[9] },
+      { shape: "●", ...coords[11] },
+      { shape: "●", ...coords[14] },
+    ]
+  },
+
+
+  // --------------------------
+  // Level30 (correct = ●)
+  // --------------------------
+  {
+    level: 30,
     correctShape: "●",
     shapes: [
       { shape: "●", ...coords[2] },
@@ -1295,34 +1325,10 @@ const puzzleData = [
     ]
   },
 
-  // --------------------------
-  // Level30 (correct = ▲)
-  // --------------------------
-  {
-    level: 30,
-    correctShape: "▲",
-    shapes: [
-      { shape: "▲", ...coords[0] },
-      { shape: "▲", ...coords[3] },
-      { shape: "▲", ...coords[5] },
-      { shape: "▲", ...coords[10] },
-      { shape: "▲", ...coords[13] },
-      { shape: "▲", ...coords[15] },
-      { shape: "■", ...coords[1] },
-      { shape: "■", ...coords[6] },
-      { shape: "■", ...coords[8] },
-      { shape: "■", ...coords[12] },
-      { shape: "★", ...coords[2] },
-      { shape: "★", ...coords[4] },
-      { shape: "★", ...coords[7] },
-      { shape: "★", ...coords[9] },
-      { shape: "●", ...coords[11] },
-      { shape: "●", ...coords[14] },
-    ]
-  },
 ///////////////////////////////////////////////////////////////
 // ここから Level31～50 (diff=1) : (5,4,4,3)
 ///////////////////////////////////////////////////////////////
+
 
 // レベル31: correct="■" (5,4,4,3)
 {
@@ -1355,40 +1361,9 @@ const puzzleData = [
   ]
 },
 
-// レベル32: correct="★"
+// レベル32: correct="●"
 {
   level: 32,
-  correctShape: "★",
-  shapes: [
-    // "★" => [2,4,6,10,15]
-    { shape: "★", ...coords[1] },   // index=2
-    { shape: "★", ...coords[3] },   // index=4
-    { shape: "★", ...coords[5] },   // index=6
-    { shape: "★", ...coords[9] },   // index=10
-    { shape: "★", ...coords[14] },  // index=15
-
-    // "●" => [1,5,8,14]
-    { shape: "●", ...coords[0] },   // index=1
-    { shape: "●", ...coords[4] },   // index=5
-    { shape: "●", ...coords[7] },   // index=8
-    { shape: "●", ...coords[13] },  // index=14
-
-    // "▲" => [3,7,9,12]
-    { shape: "▲", ...coords[2] },   // index=3
-    { shape: "▲", ...coords[6] },   // index=7
-    { shape: "▲", ...coords[8] },   // index=9
-    { shape: "▲", ...coords[11] },  // index=12
-
-    // "■" => [11,13,16]
-    { shape: "■", ...coords[10] },  // index=11
-    { shape: "■", ...coords[12] },  // index=13
-    { shape: "■", ...coords[15] },  // index=16
-  ]
-},
-
-// レベル33: correct="●"
-{
-  level: 33,
   correctShape: "●",
   shapes: [
     // "●" => [1,3,7,9,14]
@@ -1414,6 +1389,37 @@ const puzzleData = [
     { shape: "★", ...coords[11] },  // index=12
     { shape: "★", ...coords[14] },  // index=15
     { shape: "★", ...coords[15] },  // index=16
+  ]
+},
+
+// レベル33: correct="★"
+{
+  level: 33,
+  correctShape: "★",
+  shapes: [
+    // "★" => [2,4,6,10,15]
+    { shape: "★", ...coords[1] },   // index=2
+    { shape: "★", ...coords[3] },   // index=4
+    { shape: "★", ...coords[5] },   // index=6
+    { shape: "★", ...coords[9] },   // index=10
+    { shape: "★", ...coords[14] },  // index=15
+
+    // "●" => [1,5,8,14]
+    { shape: "●", ...coords[0] },   // index=1
+    { shape: "●", ...coords[4] },   // index=5
+    { shape: "●", ...coords[7] },   // index=8
+    { shape: "●", ...coords[13] },  // index=14
+
+    // "▲" => [3,7,9,12]
+    { shape: "▲", ...coords[2] },   // index=3
+    { shape: "▲", ...coords[6] },   // index=7
+    { shape: "▲", ...coords[8] },   // index=9
+    { shape: "▲", ...coords[11] },  // index=12
+
+    // "■" => [11,13,16]
+    { shape: "■", ...coords[10] },  // index=11
+    { shape: "■", ...coords[12] },  // index=13
+    { shape: "■", ...coords[15] },  // index=16
   ]
 },
 
@@ -1448,6 +1454,7 @@ const puzzleData = [
   ]
 },
 
+
 // -----------------------------------------------------------
 // Level35 (correct=■) : 同じ(5,4,4,3)パターン
 // -----------------------------------------------------------
@@ -1478,39 +1485,10 @@ const puzzleData = [
 },
 
 // -----------------------------------------------------------
-// Level36 (correct=★)
+// Level36 (correct=●)
 // -----------------------------------------------------------
 {
   level: 36,
-  correctShape: "★",
-  shapes: [
-    { shape: "★", ...coords[1] },  // [2,4,6,10,15]
-    { shape: "★", ...coords[3] },
-    { shape: "★", ...coords[5] },
-    { shape: "★", ...coords[9] },
-    { shape: "★", ...coords[14] },
-
-    { shape: "●", ...coords[0] },  // [1,5,8,14]
-    { shape: "●", ...coords[4] },
-    { shape: "●", ...coords[7] },
-    { shape: "●", ...coords[13] },
-
-    { shape: "▲", ...coords[2] },  // [3,7,9,12]
-    { shape: "▲", ...coords[6] },
-    { shape: "▲", ...coords[8] },
-    { shape: "▲", ...coords[11] },
-
-    { shape: "■", ...coords[10] }, // [11,13,16]
-    { shape: "■", ...coords[12] },
-    { shape: "■", ...coords[15] },
-  ]
-},
-
-// -----------------------------------------------------------
-// Level37 (correct=●)
-// -----------------------------------------------------------
-{
-  level: 37,
   correctShape: "●",
   shapes: [
     // "●" => [1,3,7,9,14]
@@ -1538,6 +1516,37 @@ const puzzleData = [
     { shape: "★", ...coords[15] },
   ]
 },
+
+// -----------------------------------------------------------
+// Level37 (correct=★)
+// -----------------------------------------------------------
+{
+  level: 37,
+  correctShape: "★",
+  shapes: [
+    { shape: "★", ...coords[1] },  // [2,4,6,10,15]
+    { shape: "★", ...coords[3] },
+    { shape: "★", ...coords[5] },
+    { shape: "★", ...coords[9] },
+    { shape: "★", ...coords[14] },
+
+    { shape: "●", ...coords[0] },  // [1,5,8,14]
+    { shape: "●", ...coords[4] },
+    { shape: "●", ...coords[7] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[2] },  // [3,7,9,12]
+    { shape: "▲", ...coords[6] },
+    { shape: "▲", ...coords[8] },
+    { shape: "▲", ...coords[11] },
+
+    { shape: "■", ...coords[10] }, // [11,13,16]
+    { shape: "■", ...coords[12] },
+    { shape: "■", ...coords[15] },
+  ]
+},
+
+
 
 // -----------------------------------------------------------
 // Level38 (correct=▲)
@@ -1569,10 +1578,39 @@ const puzzleData = [
 },
 
 // -----------------------------------------------------------
-// Level39 (correct=■)
+// Level39 (correct=●)
 // -----------------------------------------------------------
 {
   level: 39,
+  correctShape: "●",
+  shapes: [
+    { shape: "●", ...coords[0] },
+    { shape: "●", ...coords[2] },
+    { shape: "●", ...coords[6] },
+    { shape: "●", ...coords[8] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[1] },
+    { shape: "▲", ...coords[4] },
+    { shape: "▲", ...coords[7] },
+    { shape: "▲", ...coords[9] },
+
+    { shape: "■", ...coords[3] },
+    { shape: "■", ...coords[5] },
+    { shape: "■", ...coords[10] },
+    { shape: "■", ...coords[12] },
+
+    { shape: "★", ...coords[11] },
+    { shape: "★", ...coords[14] },
+    { shape: "★", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level40 (correct=■)
+// -----------------------------------------------------------
+{
+  level: 40,
   correctShape: "■",
   shapes: [
     { shape: "■", ...coords[0] },
@@ -1598,10 +1636,10 @@ const puzzleData = [
 },
 
 // -----------------------------------------------------------
-// Level40 (correct=★)
+// Level41 (correct=★)
 // -----------------------------------------------------------
 {
-  level: 40,
+  level: 41,
   correctShape: "★",
   shapes: [
     { shape: "★", ...coords[1] },
@@ -1623,35 +1661,6 @@ const puzzleData = [
     { shape: "■", ...coords[10] },
     { shape: "■", ...coords[12] },
     { shape: "■", ...coords[15] },
-  ]
-},
-
-// -----------------------------------------------------------
-// Level41 (correct=●)
-// -----------------------------------------------------------
-{
-  level: 41,
-  correctShape: "●",
-  shapes: [
-    { shape: "●", ...coords[0] },
-    { shape: "●", ...coords[2] },
-    { shape: "●", ...coords[6] },
-    { shape: "●", ...coords[8] },
-    { shape: "●", ...coords[13] },
-
-    { shape: "▲", ...coords[1] },
-    { shape: "▲", ...coords[4] },
-    { shape: "▲", ...coords[7] },
-    { shape: "▲", ...coords[9] },
-
-    { shape: "■", ...coords[3] },
-    { shape: "■", ...coords[5] },
-    { shape: "■", ...coords[10] },
-    { shape: "■", ...coords[12] },
-
-    { shape: "★", ...coords[11] },
-    { shape: "★", ...coords[14] },
-    { shape: "★", ...coords[15] },
   ]
 },
 
@@ -1714,10 +1723,39 @@ const puzzleData = [
 },
 
 // -----------------------------------------------------------
-// Level44 (correct=★)
+// Level44 (correct=●)
 // -----------------------------------------------------------
 {
   level: 44,
+  correctShape: "●",
+  shapes: [
+    { shape: "●", ...coords[0] },
+    { shape: "●", ...coords[2] },
+    { shape: "●", ...coords[6] },
+    { shape: "●", ...coords[8] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[1] },
+    { shape: "▲", ...coords[4] },
+    { shape: "▲", ...coords[7] },
+    { shape: "▲", ...coords[9] },
+
+    { shape: "■", ...coords[3] },
+    { shape: "■", ...coords[5] },
+    { shape: "■", ...coords[10] },
+    { shape: "■", ...coords[12] },
+
+    { shape: "★", ...coords[11] },
+    { shape: "★", ...coords[14] },
+    { shape: "★", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level45 (correct=★)
+// -----------------------------------------------------------
+{
+  level: 45,
   correctShape: "★",
   shapes: [
     { shape: "★", ...coords[1] },
@@ -1742,34 +1780,6 @@ const puzzleData = [
   ]
 },
 
-// -----------------------------------------------------------
-// Level45 (correct=●)
-// -----------------------------------------------------------
-{
-  level: 45,
-  correctShape: "●",
-  shapes: [
-    { shape: "●", ...coords[0] },
-    { shape: "●", ...coords[2] },
-    { shape: "●", ...coords[6] },
-    { shape: "●", ...coords[8] },
-    { shape: "●", ...coords[13] },
-
-    { shape: "▲", ...coords[1] },
-    { shape: "▲", ...coords[4] },
-    { shape: "▲", ...coords[7] },
-    { shape: "▲", ...coords[9] },
-
-    { shape: "■", ...coords[3] },
-    { shape: "■", ...coords[5] },
-    { shape: "■", ...coords[10] },
-    { shape: "■", ...coords[12] },
-
-    { shape: "★", ...coords[11] },
-    { shape: "★", ...coords[14] },
-    { shape: "★", ...coords[15] },
-  ]
-},
 
 // -----------------------------------------------------------
 // Level46 (correct=▲)
@@ -1830,10 +1840,39 @@ const puzzleData = [
 },
 
 // -----------------------------------------------------------
-// Level48 (correct=★)
+// Level48 (correct=●)
 // -----------------------------------------------------------
 {
   level: 48,
+  correctShape: "●",
+  shapes: [
+    { shape: "●", ...coords[0] },
+    { shape: "●", ...coords[2] },
+    { shape: "●", ...coords[6] },
+    { shape: "●", ...coords[8] },
+    { shape: "●", ...coords[13] },
+
+    { shape: "▲", ...coords[1] },
+    { shape: "▲", ...coords[4] },
+    { shape: "▲", ...coords[7] },
+    { shape: "▲", ...coords[9] },
+
+    { shape: "■", ...coords[3] },
+    { shape: "■", ...coords[5] },
+    { shape: "■", ...coords[10] },
+    { shape: "■", ...coords[12] },
+
+    { shape: "★", ...coords[11] },
+    { shape: "★", ...coords[14] },
+    { shape: "★", ...coords[15] },
+  ]
+},
+
+// -----------------------------------------------------------
+// Level49 (correct=★)
+// -----------------------------------------------------------
+{
+  level: 49,
   correctShape: "★",
   shapes: [
     { shape: "★", ...coords[1] },
@@ -1858,34 +1897,6 @@ const puzzleData = [
   ]
 },
 
-// -----------------------------------------------------------
-// Level49 (correct=●)
-// -----------------------------------------------------------
-{
-  level: 49,
-  correctShape: "●",
-  shapes: [
-    { shape: "●", ...coords[0] },
-    { shape: "●", ...coords[2] },
-    { shape: "●", ...coords[6] },
-    { shape: "●", ...coords[8] },
-    { shape: "●", ...coords[13] },
-
-    { shape: "▲", ...coords[1] },
-    { shape: "▲", ...coords[4] },
-    { shape: "▲", ...coords[7] },
-    { shape: "▲", ...coords[9] },
-
-    { shape: "■", ...coords[3] },
-    { shape: "■", ...coords[5] },
-    { shape: "■", ...coords[10] },
-    { shape: "■", ...coords[12] },
-
-    { shape: "★", ...coords[11] },
-    { shape: "★", ...coords[14] },
-    { shape: "★", ...coords[15] },
-  ]
-},
 
 // -----------------------------------------------------------
 // Level50 (correct=▲)
