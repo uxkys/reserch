@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OASIS 象限別 Ken Burns ビューア</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --panel-2: #f0f2f7;
+      --text: #1c1f26;
+      --muted: #5b6475;
+      --accent: #2f7bff;
+      --accent-2: #1f9d5a;
+      --danger: #d84a4a;
+      --border: #d7dbe6;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      background: radial-gradient(1200px 800px at 50% -200px, #ffffff, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px 40px;
+    }
+
+    .container {
+      width: min(980px, 100%);
+      display: grid;
+      gap: 16px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      margin: 0 0 4px 0;
+      letter-spacing: 0.02em;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 10px 24px rgba(22, 28, 45, 0.08);
+    }
+
+    .info-panel h1 {
+      margin-bottom: 4px;
+    }
+
+    .info-panel .lead {
+      margin: 0;
+    }
+
+    .info-panel .info-header {
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .info-panel.collapsed .lead {
+      display: none;
+    }
+
+    .info-panel.collapsed h1 {
+      font-size: 1.05rem;
+      margin: 0;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    label {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    select, button, input[type="number"] {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.95rem;
+    }
+
+    select {
+      min-width: 180px;
+    }
+
+    button {
+      cursor: pointer;
+      transition: transform 0.12s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: var(--accent);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, #2f7bff, #5aa4ff);
+      border: none;
+      color: #fff;
+    }
+
+    .ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .danger {
+      background: transparent;
+      border: 1px solid var(--danger);
+      color: var(--danger);
+    }
+
+    .viewer {
+      position: relative;
+      width: 100%;
+      height: min(56vh, 520px);
+      background: #eef1f6;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .fixation {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      color: #1c1f26;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+      opacity: 0;
+      transition: opacity 120ms ease;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .fixation.active {
+      opacity: 1;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      opacity: 0;
+      transform: scale(1);
+      transition: opacity var(--fade-ms) ease;
+      animation: kenburns var(--duration-ms) linear forwards;
+      will-change: transform, opacity;
+    }
+
+    .slide.active {
+      opacity: 1;
+    }
+
+    .viewer.paused .slide {
+      animation-play-state: paused;
+    }
+
+    @keyframes kenburns {
+      from {
+        transform: translate(var(--from-x), var(--from-y)) scale(var(--from-scale));
+      }
+      to {
+        transform: translate(var(--to-x), var(--to-y)) scale(var(--to-scale));
+      }
+    }
+
+    .status {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    .status strong {
+      color: var(--text);
+      display: block;
+      font-size: 1rem;
+      margin-top: 4px;
+    }
+
+    .note {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin: 4px 0 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #2457d6;
+      border: 1px solid #d7def7;
+      font-size: 0.8rem;
+    }
+
+    .log-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    @media (max-width: 720px) {
+      .viewer { height: 52vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="panel info-panel" id="infoPanel">
+      <div class="row info-header">
+        <div>
+          <h1>OASIS 象限別 Ken Burns ビューア</h1>
+          <p class="lead">
+            象限ごとに画像を1枚目から10枚目まで、Ken Burns 効果で連続表示します。<br>
+            1枚あたり5秒、切替クロスフェード0.5秒＋注視点0.75秒（変更可）。<br>
+            通知音は各ブロック1回、5〜10枚目のどこかで固定タイミングに鳴ります。
+          </p>
+        </div>
+        <button class="ghost" id="toggleInfoBtn" type="button">閉じる</button>
+      </div>
+    </div>
+
+    <div class="panel controls">
+      <div class="row">
+        <label for="quadrant">象限</label>
+        <select id="quadrant">
+          <option value="HVHA">HVHA（高快・高覚醒 / Q1）</option>
+          <option value="LVHA">LVHA（低快・高覚醒 / Q2）</option>
+          <option value="LVLA">LVLA（低快・低覚醒 / Q3）</option>
+          <option value="HVLA">HVLA（高快・低覚醒 / Q4）</option>
+        </select>
+        <span class="badge" id="badge">10 images</span>
+      </div>
+
+      <div class="row">
+        <button class="primary" id="startBtn">開始</button>
+        <button class="ghost" id="pauseBtn" disabled>一時停止</button>
+        <button class="danger" id="resetBtn">リセット</button>
+        <button class="ghost" id="downloadLogBtn">ログCSV</button>
+        <button class="ghost" id="clearLogBtn">ログ消去</button>
+      </div>
+
+      <div class="row">
+        <label>表示(ms)</label>
+        <input id="durationInput" type="number" min="1000" step="250" value="5000" />
+        <label>クロスフェード(ms)</label>
+        <input id="fadeInput" type="number" min="0" step="50" value="500" />
+        <label>注視点(ms)</label>
+        <input id="isiInput" type="number" min="0" step="50" value="750" />
+      </div>
+      <p class="note">※ 数値変更は次の画像から反映されます。</p>
+    </div>
+
+    <div class="panel">
+      <div class="viewer" id="viewer">
+        <div class="slide" id="slideA"></div>
+        <div class="slide" id="slideB"></div>
+        <div class="fixation" id="fixation">+</div>
+      </div>
+      <div class="status">
+        <div>
+          象限
+          <strong id="statusQuadrant">HVHA</strong>
+        </div>
+        <div>
+          進行
+          <strong id="statusProgress">0 / 10</strong>
+        </div>
+        <div>
+          ファイル
+          <strong id="statusFile">-</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const basePath = "../oasis_top80/";
+    const NOTIFY_AUDIO = "pc980_startup_like_0_5s.mp3";
+    const QUADRANTS = {
+      HVHA: {
+        label: "HVHA",
+        files: [
+          "Q1_I134_Cat_5.jpg",
+          "Q1_I256_Dog_6.jpg",
+          "Q1_I262_Dog_12.jpg",
+          "Q1_I268_Dog_18.jpg",
+          "Q1_I32_Baby_1.jpg",
+          "Q1_I334_Fireworks_1.jpg",
+          "Q1_I335_Fireworks_2.jpg",
+          "Q1_I336_Fireworks_3.jpg",
+          "Q1_I339_Fireworks_6.jpg",
+          "Q1_I463_Lake_9.jpg"
+        ]
+      },
+      HVLA: {
+        label: "HVLA",
+        files: [
+          "Q4_I182_Cotton_swabs_3.jpg",
+          "Q4_I254_Dog_4.jpg",
+          "Q4_I349_Flowers_6.jpg",
+          "Q4_I36_Baby_5.jpg",
+          "Q4_I402_Grass_4.jpg",
+          "Q4_I455_Lake_1.jpg",
+          "Q4_I456_Lake_2.jpg",
+          "Q4_I462_Lake_8.jpg",
+          "Q4_I464_Lake_10.jpg",
+          "Q4_I467_Lake_13.jpg"
+        ]
+      },
+      LVHA: {
+        label: "LVHA",
+        files: [
+          "Q2_I118_Car_accident_3.jpg",
+          "Q2_I150_Cemetery_5.jpg",
+          "Q2_I229_Destruction_6.jpg",
+          "Q2_I231_Destruction_8.jpg",
+          "Q2_I284_Dog_attack_3.jpg",
+          "Q2_I303_Explosion_2.jpg",
+          "Q2_I304_Explosion_3.jpg",
+          "Q2_I306_Explosion_5.jpg",
+          "Q2_I319_Fire_2.jpg",
+          "Q2_I328_Fire_11.jpg"
+        ]
+      },
+      LVLA: {
+        label: "LVLA",
+        files: [
+          "Q3_I129_Cardboard_3.jpg",
+          "Q3_I227_Destruction_4.jpg",
+          "Q3_I230_Destruction_7.jpg",
+          "Q3_I235_Destruction_2.jpg",
+          "Q3_I236_Destruction_3.jpg",
+          "Q3_I240_Dirt_5.jpg",
+          "Q3_I309_Feces_1.jpg",
+          "Q3_I310_Feces_2.jpg",
+          "Q3_I379_Garbage_dump_1.jpg",
+          "Q3_I380_Garbage_dump_2.jpg"
+        ]
+      }
+    };
+
+    const slideA = document.getElementById("slideA");
+    const slideB = document.getElementById("slideB");
+    const viewer = document.getElementById("viewer");
+    const infoPanel = document.getElementById("infoPanel");
+    const toggleInfoBtn = document.getElementById("toggleInfoBtn");
+    const quadrantSelect = document.getElementById("quadrant");
+    const startBtn = document.getElementById("startBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const downloadLogBtn = document.getElementById("downloadLogBtn");
+    const clearLogBtn = document.getElementById("clearLogBtn");
+    const durationInput = document.getElementById("durationInput");
+    const fadeInput = document.getElementById("fadeInput");
+    const isiInput = document.getElementById("isiInput");
+    const fixation = document.getElementById("fixation");
+
+    const statusQuadrant = document.getElementById("statusQuadrant");
+    const statusProgress = document.getElementById("statusProgress");
+    const statusFile = document.getElementById("statusFile");
+    const badge = document.getElementById("badge");
+
+    const audio = new Audio(NOTIFY_AUDIO);
+    audio.preload = "auto";
+
+    let currentIndex = 0;
+    let activeSlide = slideA;
+    let idleSlide = slideB;
+    let timerId = null;
+    let isPlaying = false;
+    let remainingMs = 0;
+    let lastStartTime = 0;
+    let showingImage = true;
+    let notificationPlayed = false;
+    let hasStarted = false;
+    let logStartTime = null;
+    const logRows = [];
+
+    const moves = [
+      { fromX: "-4%", fromY: "-3%", toX: "2%", toY: "2%" },
+      { fromX: "3%", fromY: "-2%", toX: "-2%", toY: "3%" },
+      { fromX: "-3%", fromY: "2%", toX: "3%", toY: "-2%" },
+      { fromX: "2%", fromY: "3%", toX: "-3%", toY: "-2%" }
+    ];
+
+    // 0-based index (4-9 => 5枚目〜10枚目の範囲)
+    const NOTIFY_INDEX = {
+      HVHA: 4,
+      HVLA: 6,
+      LVHA: 5,
+      LVLA: 8
+    };
+
+    function getNotifyIndex(quadrantKey) {
+      const index = NOTIFY_INDEX[quadrantKey];
+      if (typeof index === "number") return index;
+      return 4;
+    }
+
+    function getConfig() {
+      const durationMs = Math.max(1000, Number(durationInput.value) || 5000);
+      const fadeMs = Math.max(0, Number(fadeInput.value) || 0);
+      const isiMs = Math.max(0, Number(isiInput.value) || 0);
+      return { durationMs, fadeMs, isiMs };
+    }
+
+    function formatDateTime(date) {
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ` +
+             `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    }
+
+    function formatElapsed(ms) {
+      const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${minutes}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    function logEvent(event, detail = "") {
+      const now = new Date();
+      if (!logStartTime) logStartTime = now;
+      const elapsed = formatElapsed(now - logStartTime);
+      const quadrantKey = quadrantSelect.value;
+      const file = QUADRANTS[quadrantKey]?.files?.[currentIndex] || "";
+      logRows.push({
+        DateTime: formatDateTime(now),
+        Elapsed: elapsed,
+        Event: event,
+        Quadrant: quadrantKey,
+        Index: currentIndex + 1,
+        File: file,
+        Detail: detail
+      });
+    }
+
+    function downloadLogCsv() {
+      const header = ["DateTime","Elapsed","Event","Quadrant","Index","File","Detail"];
+      const lines = [header.join(",")];
+      for (const row of logRows) {
+        const values = header.map((key) => {
+          const value = row[key] ?? "";
+          const text = String(value).replace(/\"/g, "\"\"");
+          return /[\",\n]/.test(text) ? `"${text}"` : text;
+        });
+        lines.push(values.join(","));
+      }
+      const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date();
+      const filename = `${stamp.getFullYear()}${String(stamp.getMonth()+1).padStart(2,"0")}${String(stamp.getDate()).padStart(2,"0")}_` +
+        `${String(stamp.getHours()).padStart(2,"0")}${String(stamp.getMinutes()).padStart(2,"0")}${String(stamp.getSeconds()).padStart(2,"0")}_BaselineResults.csv`;
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function setKenBurns(slide) {
+      const { durationMs, fadeMs } = getConfig();
+      const move = moves[Math.floor(Math.random() * moves.length)];
+      const fromScale = (1.03 + Math.random() * 0.04).toFixed(3);
+      const toScale = (1.08 + Math.random() * 0.05).toFixed(3);
+
+      slide.style.setProperty("--from-x", move.fromX);
+      slide.style.setProperty("--from-y", move.fromY);
+      slide.style.setProperty("--to-x", move.toX);
+      slide.style.setProperty("--to-y", move.toY);
+      slide.style.setProperty("--from-scale", fromScale);
+      slide.style.setProperty("--to-scale", toScale);
+      slide.style.setProperty("--duration-ms", `${durationMs}ms`);
+      slide.style.setProperty("--fade-ms", `${fadeMs}ms`);
+    }
+
+    function updateStatus(quadrantKey) {
+      const files = QUADRANTS[quadrantKey].files;
+      statusQuadrant.textContent = quadrantKey;
+      statusProgress.textContent = `${Math.min(currentIndex + 1, files.length)} / ${files.length}`;
+      statusFile.textContent = files[currentIndex - 1] || "-";
+      badge.textContent = `${files.length} images`;
+    }
+
+    function swapSlides() {
+      const temp = activeSlide;
+      activeSlide = idleSlide;
+      idleSlide = temp;
+    }
+
+    async function playNotificationIfNeeded() {
+      if (notificationPlayed) return;
+      const quadrantKey = quadrantSelect.value;
+      const notifyIndex = getNotifyIndex(quadrantKey);
+      if (currentIndex !== notifyIndex) return;
+
+      notificationPlayed = true;
+      logEvent("notification");
+      pausePlayback();
+      try {
+        audio.currentTime = 0;
+        await audio.play();
+      } catch (err) {
+        // Autoplay制限などで失敗した場合は停止状態を維持
+      }
+    }
+
+    function showImage(index) {
+      const quadrantKey = quadrantSelect.value;
+      const files = QUADRANTS[quadrantKey].files;
+      if (index >= files.length) {
+        stopPlayback(true);
+        return;
+      }
+
+      const file = files[index];
+      fixation.classList.remove("active");
+      idleSlide.classList.remove("active");
+      idleSlide.style.backgroundImage = `url(${basePath}${file})`;
+      setKenBurns(idleSlide);
+
+      // restart animation
+      idleSlide.style.animation = "none";
+      void idleSlide.offsetHeight;
+      idleSlide.style.animation = "kenburns var(--duration-ms) linear forwards";
+
+      idleSlide.classList.add("active");
+      activeSlide.classList.remove("active");
+
+      swapSlides();
+      updateStatus(quadrantKey);
+      logEvent("image", `shown ${index + 1}/${files.length}`);
+      playNotificationIfNeeded();
+    }
+
+    function scheduleNext(durationMs) {
+      clearTimeout(timerId);
+      timerId = setTimeout(() => {
+        if (!isPlaying) return;
+
+        const config = getConfig();
+        const quadrantKey = quadrantSelect.value;
+        const files = QUADRANTS[quadrantKey].files;
+
+        if (showingImage) {
+          fixation.classList.add("active");
+          activeSlide.classList.remove("active");
+          idleSlide.classList.remove("active");
+          showingImage = false;
+          lastStartTime = Date.now();
+          logEvent("fixation");
+          if (currentIndex >= files.length - 1) {
+            stopPlayback(false);
+            return;
+          }
+          scheduleNext(config.isiMs);
+          return;
+        }
+
+        fixation.classList.remove("active");
+        currentIndex += 1;
+        showImage(currentIndex);
+        showingImage = true;
+        lastStartTime = Date.now();
+        scheduleNext(config.durationMs);
+      }, durationMs);
+    }
+
+    function startPlayback() {
+      if (isPlaying) return;
+      const quadrantKey = quadrantSelect.value;
+      currentIndex = 0;
+      notificationPlayed = false;
+      hasStarted = true;
+      isPlaying = true;
+      viewer.classList.remove("paused");
+      startBtn.disabled = true;
+      pauseBtn.disabled = false;
+      quadrantSelect.disabled = true;
+
+      showImage(currentIndex);
+      showingImage = true;
+      const config = getConfig();
+      lastStartTime = Date.now();
+      scheduleNext(config.durationMs);
+      logEvent("start");
+    }
+
+    function pausePlayback() {
+      if (!isPlaying) return;
+      const config = getConfig();
+      const elapsed = Date.now() - lastStartTime;
+      remainingMs = Math.max(0, (showingImage ? config.durationMs : config.isiMs) - elapsed);
+      clearTimeout(timerId);
+      isPlaying = false;
+      viewer.classList.add("paused");
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+      logEvent("pause");
+    }
+
+    function resumePlayback() {
+      if (isPlaying) return;
+      if (currentIndex >= QUADRANTS[quadrantSelect.value].files.length) return;
+      isPlaying = true;
+      viewer.classList.remove("paused");
+      startBtn.disabled = true;
+      pauseBtn.disabled = false;
+      lastStartTime = Date.now();
+      const config = getConfig();
+      scheduleNext(remainingMs || (showingImage ? config.durationMs : config.isiMs));
+      logEvent("resume");
+    }
+
+    function stopPlayback(resetIndex) {
+      clearTimeout(timerId);
+      isPlaying = false;
+      viewer.classList.remove("paused");
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+      quadrantSelect.disabled = false;
+      remainingMs = 0;
+      showingImage = true;
+      if (resetIndex) {
+        currentIndex = QUADRANTS[quadrantSelect.value].files.length;
+        updateStatus(quadrantSelect.value);
+      }
+      logEvent("stop");
+    }
+
+    function resetPlayback() {
+      clearTimeout(timerId);
+      isPlaying = false;
+      currentIndex = 0;
+      remainingMs = 0;
+      notificationPlayed = false;
+      hasStarted = false;
+      viewer.classList.remove("paused");
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+      quadrantSelect.disabled = false;
+      activeSlide.classList.remove("active");
+      idleSlide.classList.remove("active");
+      fixation.classList.add("active");
+      statusFile.textContent = "-";
+      statusProgress.textContent = `1 / ${QUADRANTS[quadrantSelect.value].files.length}`;
+      logEvent("reset");
+    }
+
+    startBtn.addEventListener("click", () => {
+      if (isPlaying) return;
+      const maxIndex = QUADRANTS[quadrantSelect.value].files.length;
+      if (hasStarted && currentIndex < maxIndex) {
+        resumePlayback();
+      } else {
+        startPlayback();
+      }
+    });
+
+    pauseBtn.addEventListener("click", pausePlayback);
+    resetBtn.addEventListener("click", resetPlayback);
+
+    quadrantSelect.addEventListener("change", () => {
+      resetPlayback();
+      updateStatus(quadrantSelect.value);
+      logEvent("quadrant_change");
+    });
+
+    toggleInfoBtn.addEventListener("click", () => {
+      infoPanel.classList.toggle("collapsed");
+      toggleInfoBtn.textContent = infoPanel.classList.contains("collapsed") ? "開く" : "閉じる";
+      logEvent("info_toggle", infoPanel.classList.contains("collapsed") ? "collapsed" : "expanded");
+    });
+
+    downloadLogBtn.addEventListener("click", () => {
+      logEvent("download_log");
+      downloadLogCsv();
+    });
+
+    clearLogBtn.addEventListener("click", () => {
+      logRows.length = 0;
+      logStartTime = null;
+      logEvent("log_cleared");
+    });
+
+    fixation.classList.add("active");
+    updateStatus(quadrantSelect.value);
+  </script>
+</body>
+</html>

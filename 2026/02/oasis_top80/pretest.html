@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>OASIS 予備実験画像ビューア</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #111;
+      color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      text-align: center;
+      max-width: 800px;
+      width: 100%;
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .info {
+      font-size: 0.9rem;
+      color: #ccc;
+      margin-bottom: 1rem;
+    }
+
+    .image-frame {
+      width: 100%;
+      max-width: 720px;
+      height: 480px; /* 必要なら調整 */
+      margin: 0 auto 8px;
+      background: #222;
+      border-radius: 8px;
+      border: 1px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .image-frame img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: none; /* 非表示スタート */
+    }
+
+    .image-title {
+      font-size: 0.9rem;
+      color: #ddd;
+      margin-bottom: 8px;
+      min-height: 1.2em; /* タイトルがないときも高さをキープ */
+    }
+
+    .status {
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+      color: #aaa;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: #2d7df6;
+      color: white;
+      transition: opacity 0.15s ease, transform 0.1s ease;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    button:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+
+    .done-message {
+      font-size: 1.1rem;
+      margin-top: 16px;
+      color: #8be28b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>OASIS画像 予備実験ビューア</h1>
+    <div class="info">
+      ・「次の画像」ボタンを押すと画像が<span>5秒</span>表示され、<br>
+      &nbsp;&nbsp;その後自動的に非表示になります。<br>
+      ・別タブの Affective Slider で評定してください。
+    </div>
+
+    <div class="image-frame">
+      <img id="stimulus" src="" alt="刺激画像">
+    </div>
+
+    <!-- ★ 画像タイトル表示領域 -->
+    <div class="image-title" id="imageTitle"></div>
+
+    <div class="status" id="statusText">
+      まだ画像は表示されていません。
+    </div>
+
+    <div class="button-row">
+      <button id="nextButton">次の画像</button>
+      <button id="resetButton">最初から</button>
+    </div>
+
+    <div class="done-message" id="doneMessage" style="display: none;">
+      すべての画像の呈示が完了しました。
+    </div>
+  </div>
+
+  <script>
+    const images = [
+      "Q1_I32_Baby_1.jpg",
+      "Q1_I59_Beach_1.jpg",
+      "Q1_I60_Beach_2.jpg",
+      "Q1_I134_Cat_5.jpg",
+      "Q1_I256_Dog_6.jpg",
+      "Q1_I262_Dog_12.jpg",
+      "Q1_I268_Dog_18.jpg",
+      "Q1_I334_Fireworks_1.jpg",
+      "Q1_I335_Fireworks_2.jpg",
+      "Q1_I336_Fireworks_3.jpg",
+      "Q1_I339_Fireworks_6.jpg",
+      "Q1_I463_Lake_9.jpg",
+      "Q1_I466_Lake_12.jpg",
+      "Q1_I468_Lake_14.jpg",
+      "Q1_I469_Lake_15.jpg",
+      "Q1_I516_Nature_1.jpg",
+      "Q1_I531_Nude_couple_5.jpg",
+      "Q1_I616_Penguins_2.jpg",
+      "Q1_I660_Rainbow_1.jpg",
+      "Q1_I661_Rainbow_2.jpg",
+
+      "Q2_I26_Animal_carcass_5.jpg",
+      "Q2_I208_Dead_bodies_1.jpg",
+      "Q2_I209_Dead_bodies_2.jpg",
+      "Q2_I210_Dead_bodies_3.jpg",
+      "Q2_I234_Dirt_1.jpg",
+      "Q2_I276_Dog_26.jpg",
+      "Q2_I287_Dummy_1.jpg",
+      "Q2_I306_Explosion_5.jpg",
+      "Q2_I322_Fire_5.jpg",
+      "Q2_I326_Fire_9.jpg",
+      "Q2_I328_Fire_11.jpg",
+      "Q2_I440_Injury_4.jpg",
+      "Q2_I451_KKK_rally_1.jpg",
+      "Q2_I452_KKK_rally_2.jpg",
+      "Q2_I496_Miserable_pose_3.jpg",
+      "Q2_I725_Severed_finger_1.jpg",
+      "Q2_I855_Tumor_1.jpg",
+      "Q2_I864_War_1.jpg",
+      "Q2_I869_War_6.jpg",
+      "Q2_I871_War_8.jpg",
+
+      "Q3_I129_Cardboard_3.jpg",
+      "Q3_I227_Destruction_4.jpg",
+      "Q3_I230_Destruction_7.jpg",
+      "Q3_I235_Destruction_2.jpg",
+      "Q3_I236_Destruction_3.jpg",
+      "Q3_I240_Dirt_5.jpg",
+      "Q3_I309_Feces_1.jpg",
+      "Q3_I310_Feces_2.jpg",
+      "Q3_I379_Garbage_dump_1.jpg",
+      "Q3_I380_Garbage_dump_2.jpg",
+      "Q3_I381_Garbage_dump_3.jpg",
+      "Q3_I382_Garbage_dump_4.jpg",
+      "Q3_I384_Garbage_dump_6.jpg",
+      "Q3_I386_Garbage_dump_8.jpg",
+      "Q3_I443_Jail_2.jpg",
+      "Q3_I600_Paperclips_1.jpg",
+      "Q3_I749_Sidewalk_6.jpg",
+      "Q3_I862_Wall_4.jpg",
+      "Q3_I863_Wall_5.jpg",
+      "Q3_I891_Yarn_1.jpg",
+
+      "Q4_I36_Baby_5.jpg",
+      "Q4_I74_Bird_1.jpg",
+      "Q4_I95_Bricks_1.jpg",
+      "Q4_I182_Cotton_swabs_3.jpg",
+      "Q4_I254_Dog_4.jpg",
+      "Q4_I349_Flowers_6.jpg",
+      "Q4_I402_Grass_4.jpg",
+      "Q4_I455_Lake_1.jpg",
+      "Q4_I456_Lake_2.jpg",
+      "Q4_I462_Lake_8.jpg",
+      "Q4_I464_Lake_10.jpg",
+      "Q4_I467_Lake_13.jpg",
+      "Q4_I587_Office_supplies_2.jpg",
+      "Q4_I597_Paper_3.jpg",
+      "Q4_I602_Paperclips_3.jpg",
+      "Q4_I673_Rocks_6.jpg",
+      "Q4_I743_Siblings_1.jpg",
+      "Q4_I859_Wall_1.jpg",
+      "Q4_I860_Wall_2.jpg",
+      "Q4_I861_Wall_3.jpg"
+    ];
+
+    // 5秒表示（ミリ秒）
+    const DISPLAY_DURATION_MS = 5000;
+
+    const imgElement   = document.getElementById("stimulus");
+    const titleElement = document.getElementById("imageTitle");
+    const nextButton   = document.getElementById("nextButton");
+    const resetButton  = document.getElementById("resetButton");
+    const statusText   = document.getElementById("statusText");
+    const doneMessage  = document.getElementById("doneMessage");
+
+    let currentIndex = -1;
+    let hideTimerId = null;
+
+    function clearTimer() {
+      if (hideTimerId !== null) {
+        clearTimeout(hideTimerId);
+        hideTimerId = null;
+      }
+    }
+
+    // ファイル名から拡張子を削ってタイトルにする
+    function updateTitle(filename) {
+      const base = filename.replace(/\.[^/.]+$/, ""); // 拡張子削除
+      titleElement.textContent = base;
+    }
+
+    function hideImage() {
+      imgElement.style.display = "none";
+      // タイトルはそのまま残す（直前に何を見たか分かるように）
+      statusText.textContent =
+        "画像は非表示です。Affective Sliderで評定を終えたら「次の画像」を押してください。";
+      nextButton.disabled = false;
+    }
+
+    function showNextImage() {
+      // これ以上画像がない場合
+      if (currentIndex + 1 >= images.length) {
+        imgElement.style.display = "none";
+        titleElement.textContent = "";
+        statusText.textContent = "表示する画像はもうありません。";
+        nextButton.disabled = true;
+        doneMessage.style.display = "block";
+        return;
+      }
+
+      clearTimer();
+
+      currentIndex += 1;
+      const filename = images[currentIndex];
+
+      imgElement.src = filename;
+      imgElement.style.display = "block";
+      updateTitle(filename);
+
+      statusText.textContent =
+        `画像 ${currentIndex + 1} / ${images.length} を表示中（5秒後に自動で非表示）。`;
+      doneMessage.style.display = "none";
+
+      nextButton.disabled = true;
+
+      hideTimerId = setTimeout(() => {
+        hideImage();
+      }, DISPLAY_DURATION_MS);
+    }
+
+    function resetSequence() {
+      clearTimer();
+      currentIndex = -1;
+      imgElement.style.display = "none";
+      imgElement.src = "";
+      titleElement.textContent = "";
+      statusText.textContent =
+        "最初の画像から再開できます。「次の画像」を押してください。";
+      nextButton.disabled = false;
+      doneMessage.style.display = "none";
+    }
+
+    nextButton.addEventListener("click", showNextImage);
+    resetButton.addEventListener("click", resetSequence);
+
+    // キーボードショートカット（スペース or 右矢印で次の画像）
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space" || e.code === "ArrowRight") {
+        if (!nextButton.disabled) {
+          e.preventDefault();
+          showNextImage();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
