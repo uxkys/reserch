@@ -31,6 +31,7 @@
     background-color: white; /* スライダーの塗りつぶし */
     border: 1px solid black; /* スライダーの枠線 */
     border-radius: 10px;
+    cursor: pointer;
   }
 
   #arousal::-webkit-slider-thumb, #pleasure::-webkit-slider-thumb {
@@ -51,6 +52,26 @@
     border: 3px solid black;
     border-radius: 10px;
     cursor: pointer;
+  }
+
+  #arousal.hide-thumb::-webkit-slider-thumb,
+  #pleasure.hide-thumb::-webkit-slider-thumb {
+    opacity: 0;
+  }
+
+  #arousal.hide-thumb::-moz-range-thumb,
+  #pleasure.hide-thumb::-moz-range-thumb {
+    opacity: 0;
+  }
+
+  #arousal.hide-thumb::-webkit-slider-thumb,
+  #pleasure.hide-thumb::-webkit-slider-thumb {
+    opacity: 0;
+  }
+
+  #arousal.hide-thumb::-moz-range-thumb,
+  #pleasure.hide-thumb::-moz-range-thumb {
+    opacity: 0;
   }
 
   .gradient-arrow {
@@ -89,58 +110,60 @@
     margin-top: 20px;
   }
 
-  .submit-button img {
-    width: 120px; /* アイコンの大きさ */
+  .submit-btn {
+    width: 120px;
     height: 40px;
     cursor: pointer;
-    border: 2px solid black; /* 枠線の追加 */
-    border-radius: 30px; /* 角丸 */
-    filter: brightness(0); /* 初期状態で黒 */
-    transition: background-color 0.3s, filter 0.3s, transform 0.12s ease, opacity 0.12s ease;
+    border: 2px solid black;
+    border-radius: 30px;
+    background: #fff;
+    position: relative;
+    transition: background-color 0.3s, border-color 0.3s, transform 0.12s ease, opacity 0.12s ease;
     margin-top: 32px;
     user-select: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
   }
 
-  .submit-button img:hover {
-    background-color: black; /* マウスオーバー時に背景を黒 */
-    filter: brightness(10); /* マウスオーバー時にSVGを白 */
+  .submit-btn img {
+    width: 24px;
+    height: 24px;
+    filter: brightness(0);
+    transition: filter 0.3s ease;
   }
 
-  /* --- 保存フィードバック（追加） --- */
-  .save-feedback {
-    width: 600px;
-    margin: 10px auto 0 auto;
-    text-align: center;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    opacity: 0;
-    transform: translateY(-4px);
-    transition: opacity 0.18s ease, transform 0.18s ease;
-    pointer-events: none;
-    line-height: 1.6;
+  .submit-btn:hover {
+    background-color: #dcdcdc;
+    border-color: #000;
   }
 
-  .save-feedback.show {
-    opacity: 1;
-    transform: translateY(0);
+  .submit-btn:hover img {
+    filter: brightness(0);
   }
 
-  .save-feedback .badge {
-    display: inline-block;
-    border: 1px solid #111;
-    border-radius: 999px;
-    padding: 6px 12px;
-    background: #fff;
+  .pulse {
+    animation: pulse 260ms ease;
   }
 
-  .save-feedback .muted {
-    opacity: 0.7;
-    margin-left: 8px;
-    font-size: 12px;
+  .submit-btn.flash {
+    background-color: #d9f4e1;
+    border-color: #1f7a4f;
+  }
+
+  .submit-btn.flash img {
+    filter: brightness(0);
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+    100% { transform: scale(1); }
   }
 
   /* 保存中（連打防止） */
-  .saving {
+  .submit-btn.saving {
     pointer-events: none;
     opacity: 0.55;
     transform: scale(0.98);
@@ -199,11 +222,10 @@
 
 <!-- saveアイコン -->
 <div class="submit-button">
-  <img id="submitButton" src="check_40dp_E8EAED_FILL0_wght400_GRAD0_opsz40.svg" alt="Save Icon">
+  <button id="submitButton" class="submit-btn" type="button" aria-label="Save">
+    <img src="check_40dp_E8EAED_FILL0_wght400_GRAD0_opsz40.svg" alt="Save Icon">
+  </button>
 </div>
-
-<!-- 保存フィードバック（追加） -->
-<div id="saveFeedback" class="save-feedback" aria-live="polite" aria-atomic="true"></div>
 
 <!-- ログ表示エリア -->
 <div class="log" id="logContainer">
@@ -229,13 +251,28 @@ const toggleLogButton = document.getElementById('toggleLogButton');
 const downloadLogButton = document.getElementById('downloadLogButton');
 const logContainer = document.getElementById('logContainer');
 const submitButton = document.getElementById('submitButton');
-const saveFeedback = document.getElementById('saveFeedback');
 
 let logEntries = [];          // ログを保存する配列
 let lastLogTimestamp = '';    // 最後の操作ログのタイムスタンプ（HHMMSS）
 let hasInteracted = false;    // スライダーを動かしたか（保存後にリセット）
 let saveLock = false;         // 連打防止（保存処理中フラグ）
-let feedbackTimer = null;     // フィードバック表示用タイマー
+let feedbackTimer = null;     // アニメーション用タイマー
+
+// Hide both thumbs until the user interacts again.
+function hideThumbs() {
+  arousalSlider.classList.add('hide-thumb');
+  pleasureSlider.classList.add('hide-thumb');
+}
+
+// Show only the thumb for the slider the user touched.
+function showThumbFor(target) {
+  if (target === arousalSlider) {
+    arousalSlider.classList.remove('hide-thumb');
+  }
+  if (target === pleasureSlider) {
+    pleasureSlider.classList.remove('hide-thumb');
+  }
+}
 
 // 今日の日付を YYYYMMDD 形式で取得（ファイル名用）
 function getTodayYYYYMMDD() {
@@ -264,26 +301,29 @@ function exportLogToCSV() {
   const csvContent = header + rows;
 
   // ★ ファイル名に「今日の日付(YYYYMMDD)」を追加
-  // 例: AffectiveSlider_20260121_135959.csv
+  // 例: 20260210_145756_PolarH10-HRV.csv
   const today = getTodayYYYYMMDD();
-  const fileName = `AffectiveSlider_${today}_${lastLogTimestamp}.csv`;
+  const fileName = `${today}_${lastLogTimestamp}_PolarH10-HRV.csv`;
 
   downloadCSV(csvContent, fileName);
 }
 
-// 保存フィードバック表示（追加）
-function showSaveFeedback(message, subMessage = '') {
+function pulseElement(el) {
+  if (!el) return;
   if (feedbackTimer) clearTimeout(feedbackTimer);
-
-  const now = new Date().toLocaleTimeString('ja-JP');
-  const sub = subMessage ? `<span class="muted">${subMessage}</span>` : `<span class="muted">${now}</span>`;
-
-  saveFeedback.innerHTML = `<span class="badge">${message}${sub}</span>`;
-  saveFeedback.classList.add('show');
-
+  el.classList.remove('pulse');
+  void el.offsetWidth;
+  el.classList.add('pulse');
   feedbackTimer = setTimeout(() => {
-    saveFeedback.classList.remove('show');
-  }, 1400);
+    el.classList.remove('pulse');
+  }, 300);
+}
+
+function flashSaveButton() {
+  submitButton.classList.add('flash');
+  setTimeout(() => {
+    submitButton.classList.remove('flash');
+  }, 380);
 }
 
 // ログを送信した際に追加・表示する関数
@@ -312,18 +352,14 @@ function addLogEntry() {
   // ログを更新して表示
   updateLogDisplay();
 
-  // ★ 保存フィードバック（スライダー未操作でも必ず出る）
-  // これがないと「保存できたか不明」で二度押しが起きる
-  const idx = logEntries.length;
-  const interactedNote = hasInteracted ? '' : '（未操作のまま保存）';
-  showSaveFeedback(
-    `保存しました：${idx}件目 ${interactedNote}`,
-    ` arousal ${arousalValue} / pleasure ${pleasureValue}`
-  );
+  // 保存時の非言語フィードバック（パルス＋一瞬緑）
+  pulseElement(submitButton);
+  flashSaveButton();
 
   // スライダーを中央に戻す
   arousalSlider.value = 50;
   pleasureSlider.value = 50;
+  hideThumbs();
 
   // 「未操作判定」をリセット（次の操作サイクルへ）
   hasInteracted = false;
@@ -346,8 +382,14 @@ function updateLogDisplay() {
 }
 
 // スライダーを動かしたら「操作あり」とみなす（追加）
-arousalSlider.addEventListener('input', () => { hasInteracted = true; });
-pleasureSlider.addEventListener('input', () => { hasInteracted = true; });
+arousalSlider.addEventListener('input', (e) => {
+  hasInteracted = true;
+  showThumbFor(e.currentTarget);
+});
+pleasureSlider.addEventListener('input', (e) => {
+  hasInteracted = true;
+  showThumbFor(e.currentTarget);
+});
 
 // 操作ログの表示/非表示を切り替える
 toggleLogButton.onclick = function() {
@@ -366,14 +408,15 @@ resetButton.onclick = function() {
   updateLogDisplay();    // 表示をクリア
   lastLogTimestamp = ''; // タイムスタンプをリセット
   hasInteracted = false; // 操作状態もリセット
-  showSaveFeedback('ログをリセットしました', '');
+  pulseElement(resetButton);
+  hideThumbs();
 };
 
 // ログのダウンロードボタン
 downloadLogButton.onclick = function() {
   if (logEntries.length > 0) {
     exportLogToCSV();
-    showSaveFeedback('ダウンロードしました', ` ${getTodayYYYYMMDD()}_${lastLogTimestamp}`);
+    pulseElement(downloadLogButton);
   } else {
     alert("操作ログが空です。ログを追加してください。");
   }
@@ -381,6 +424,9 @@ downloadLogButton.onclick = function() {
 
 // saveアイコンが押されたときにログを記録し、スライダーをリセット
 submitButton.onclick = addLogEntry;
+
+// Initial state: hide thumbs until the user interacts.
+hideThumbs();
 
 </script>
 
