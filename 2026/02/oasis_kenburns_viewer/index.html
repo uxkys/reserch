@@ -243,6 +243,55 @@
       align-items: center;
     }
 
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(16, 20, 30, 0.56);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(960px, 96vw);
+      height: min(780px, 92vh);
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .modal-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #fff;
+    }
+
+    .modal-footer {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      background: #fafbfe;
+    }
+
     @media (max-width: 720px) {
       .viewer { height: 52vh; }
     }
@@ -314,6 +363,21 @@
           ファイル
           <strong id="statusFile">-</strong>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ratingModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="ratingModalTitle">
+      <div class="modal-header" id="ratingModalTitle">通知評価を入力してください / Please complete the rating</div>
+      <iframe
+        class="modal-frame"
+        id="ratingFrame"
+        src="../affective_slider_exp/affective_slider_oasis_exp.html"
+        title="Affective Slider"
+      ></iframe>
+      <div class="modal-footer">
+        <button class="primary" id="ratingDoneBtn" type="button">評定後に再開 / Resume</button>
       </div>
     </div>
   </div>
@@ -404,6 +468,9 @@
     const statusProgress = document.getElementById("statusProgress");
     const statusFile = document.getElementById("statusFile");
     const badge = document.getElementById("badge");
+    const ratingModal = document.getElementById("ratingModal");
+    const ratingDoneBtn = document.getElementById("ratingDoneBtn");
+    const ratingFrame = document.getElementById("ratingFrame");
 
     const audio = new Audio(NOTIFY_AUDIO);
     audio.preload = "auto";
@@ -419,6 +486,8 @@
     let notificationPlayed = false;
     let hasStarted = false;
     let logStartTime = null;
+    let modalOpen = false;
+    let ratingSavedForCurrentPause = false;
     const logRows = [];
 
     const moves = [
@@ -520,6 +589,25 @@
       slide.style.setProperty("--fade-ms", `${fadeMs}ms`);
     }
 
+    function openRatingModal() {
+      if (modalOpen) return;
+      modalOpen = true;
+      ratingSavedForCurrentPause = false;
+      ratingDoneBtn.disabled = true;
+      ratingModal.classList.add("open");
+      ratingModal.setAttribute("aria-hidden", "false");
+      logEvent("rating_modal_open");
+    }
+
+    function closeRatingModal() {
+      if (!modalOpen) return;
+      modalOpen = false;
+      ratingDoneBtn.disabled = true;
+      ratingModal.classList.remove("open");
+      ratingModal.setAttribute("aria-hidden", "true");
+      logEvent("rating_modal_close");
+    }
+
     function updateStatus(quadrantKey) {
       const files = QUADRANTS[quadrantKey].files;
       statusQuadrant.textContent = quadrantKey;
@@ -543,6 +631,7 @@
       notificationPlayed = true;
       logEvent("notification");
       pausePlayback();
+      openRatingModal();
       try {
         audio.currentTime = 0;
         await audio.play();
@@ -662,6 +751,7 @@
       clearTimeout(timerId);
       isPlaying = false;
       viewer.classList.remove("paused");
+      closeRatingModal();
       startBtn.disabled = false;
       pauseBtn.disabled = true;
       quadrantSelect.disabled = false;
@@ -682,6 +772,7 @@
       notificationPlayed = false;
       hasStarted = false;
       viewer.classList.remove("paused");
+      closeRatingModal();
       startBtn.disabled = false;
       pauseBtn.disabled = true;
       quadrantSelect.disabled = false;
@@ -694,6 +785,7 @@
     }
 
     startBtn.addEventListener("click", () => {
+      if (modalOpen) return;
       if (isPlaying) return;
       const maxIndex = QUADRANTS[quadrantSelect.value].files.length;
       if (hasStarted && currentIndex < maxIndex) {
@@ -727,6 +819,27 @@
       logRows.length = 0;
       logStartTime = null;
       logEvent("log_cleared");
+    });
+
+    ratingDoneBtn.addEventListener("click", () => {
+      if (!ratingSavedForCurrentPause) return;
+      closeRatingModal();
+      if (!isPlaying && hasStarted) {
+        resumePlayback();
+      }
+    });
+
+    ratingFrame.addEventListener("load", () => {
+      logEvent("rating_frame_loaded");
+    });
+
+    window.addEventListener("message", (event) => {
+      if (!modalOpen) return;
+      if (event.source !== ratingFrame.contentWindow) return;
+      if (!event.data || event.data.type !== "affective-slider-saved") return;
+      ratingSavedForCurrentPause = true;
+      ratingDoneBtn.disabled = false;
+      logEvent("rating_saved");
     });
 
     fixation.classList.add("active");

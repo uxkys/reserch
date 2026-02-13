@@ -385,6 +385,11 @@ function addLogEntry() {
     saveLock = false;
     submitButton.classList.remove('saving');
   }, 550);
+
+  // Notify the parent viewer that a rating has been saved.
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'affective-slider-saved' }, '*');
+  }
 }
 
 // ログを表示する関数
