@@ -473,6 +473,7 @@
     const ratingModal = document.getElementById("ratingModal");
     const ratingDoneBtn = document.getElementById("ratingDoneBtn");
     const ratingFrame = document.getElementById("ratingFrame");
+    const ratingModalTitle = document.getElementById("ratingModalTitle");
 
     const audio = new Audio(NOTIFY_AUDIO);
     audio.preload = "auto";
@@ -490,6 +491,7 @@
     let logStartTime = null;
     let modalOpen = false;
     let ratingSavedForCurrentPause = false;
+    let modalPurpose = null;
     const logRows = [];
 
     const moves = [
@@ -596,14 +598,28 @@
       ratingFrame.src = `${RATING_PAGE_URL}?v=${RATING_PAGE_VERSION}`;
     }
 
-    function openRatingModal() {
+    function requestAffectiveCsvExport() {
+      if (!ratingFrame.contentWindow) return;
+      ratingFrame.contentWindow.postMessage({ type: "affective-slider-export-csv" }, "*");
+      logEvent("request_affective_export");
+    }
+
+    function openRatingModal(purpose) {
       if (modalOpen) return;
       modalOpen = true;
+      modalPurpose = purpose;
       ratingSavedForCurrentPause = false;
       ratingDoneBtn.disabled = true;
+      if (purpose === "pre") {
+        ratingModalTitle.textContent = "開始前の評価を入力してください / Please complete the pre-block rating";
+      } else if (purpose === "post") {
+        ratingModalTitle.textContent = "終了時の評価を入力してください / Please complete the post-block rating";
+      } else {
+        ratingModalTitle.textContent = "通知評価を入力してください / Please complete the rating";
+      }
       ratingModal.classList.add("open");
       ratingModal.setAttribute("aria-hidden", "false");
-      logEvent("rating_modal_open");
+      logEvent("rating_modal_open", purpose);
     }
 
     function closeRatingModal() {
@@ -612,7 +628,8 @@
       ratingDoneBtn.disabled = true;
       ratingModal.classList.remove("open");
       ratingModal.setAttribute("aria-hidden", "true");
-      logEvent("rating_modal_close");
+      logEvent("rating_modal_close", modalPurpose || "");
+      modalPurpose = null;
     }
 
     function updateStatus(quadrantKey) {
@@ -638,7 +655,7 @@
       notificationPlayed = true;
       logEvent("notification");
       pausePlayback();
-      openRatingModal();
+      openRatingModal("notification");
       try {
         audio.currentTime = 0;
         await audio.play();
@@ -692,7 +709,16 @@
           lastStartTime = Date.now();
           logEvent("fixation");
           if (currentIndex >= files.length - 1) {
-            stopPlayback(false);
+            clearTimeout(timerId);
+            isPlaying = false;
+            viewer.classList.remove("paused");
+            startBtn.disabled = true;
+            pauseBtn.disabled = true;
+            quadrantSelect.disabled = true;
+            remainingMs = 0;
+            showingImage = true;
+            logEvent("block_end");
+            openRatingModal("post");
             return;
           }
           scheduleNext(config.isiMs);
@@ -798,7 +824,7 @@
       if (hasStarted && currentIndex < maxIndex) {
         resumePlayback();
       } else {
-        startPlayback();
+        openRatingModal("pre");
       }
     });
 
@@ -820,6 +846,7 @@
     downloadLogBtn.addEventListener("click", () => {
       logEvent("download_log");
       downloadLogCsv();
+      requestAffectiveCsvExport();
     });
 
     clearLogBtn.addEventListener("click", () => {
@@ -830,7 +857,16 @@
 
     ratingDoneBtn.addEventListener("click", () => {
       if (!ratingSavedForCurrentPause) return;
+      const currentPurpose = modalPurpose;
       closeRatingModal();
+      if (currentPurpose === "pre") {
+        startPlayback();
+        return;
+      }
+      if (currentPurpose === "post") {
+        stopPlayback(false);
+        return;
+      }
       if (!isPlaying && hasStarted) {
         resumePlayback();
       }
@@ -841,12 +877,25 @@
     });
 
     window.addEventListener("message", (event) => {
-      if (!modalOpen) return;
       if (event.source !== ratingFrame.contentWindow) return;
-      if (!event.data || event.data.type !== "affective-slider-saved") return;
-      ratingSavedForCurrentPause = true;
-      ratingDoneBtn.disabled = false;
-      logEvent("rating_saved");
+      if (!event.data || !event.data.type) return;
+
+      if (event.data.type === "affective-slider-saved") {
+        if (!modalOpen) return;
+        ratingSavedForCurrentPause = true;
+        ratingDoneBtn.disabled = false;
+        logEvent("rating_saved");
+        return;
+      }
+
+      if (event.data.type === "affective-slider-exported") {
+        logEvent("affective_exported");
+        return;
+      }
+
+      if (event.data.type === "affective-slider-export-empty") {
+        logEvent("affective_export_empty");
+      }
     });
 
     fixation.classList.add("active");

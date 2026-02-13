@@ -498,6 +498,20 @@ submitButton.onclick = addLogEntry;
 hideThumbs();
 setSaveEnabled(false);
 
+window.addEventListener('message', (event) => {
+  if (!event.data || event.data.type !== 'affective-slider-export-csv') return;
+  if (logEntries.length === 0) {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'affective-slider-export-empty' }, '*');
+    }
+    return;
+  }
+  exportLogToCSV();
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'affective-slider-exported' }, '*');
+  }
+});
+
 </script>
 
 </body>
