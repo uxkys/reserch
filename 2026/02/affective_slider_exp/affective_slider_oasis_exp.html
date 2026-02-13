@@ -23,7 +23,7 @@
     align-items: center;
   }
 
-  #arousal, #pleasure {
+  #stress, #arousal, #pleasure {
     width: 400px;
     height: 12px; /* スライダーの太さ */
     -webkit-appearance: none;
@@ -34,7 +34,7 @@
     cursor: pointer;
   }
 
-  #arousal::-webkit-slider-thumb, #pleasure::-webkit-slider-thumb {
+  #stress::-webkit-slider-thumb, #arousal::-webkit-slider-thumb, #pleasure::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 25px;
@@ -45,7 +45,7 @@
     cursor: pointer;
   }
 
-  #arousal::-moz-range-thumb, #pleasure::-moz-range-thumb {
+  #stress::-moz-range-thumb, #arousal::-moz-range-thumb, #pleasure::-moz-range-thumb {
     width: 25px;
     height: 23px;
     background-color: white;
@@ -54,24 +54,37 @@
     cursor: pointer;
   }
 
+  #stress.hide-thumb::-webkit-slider-thumb,
   #arousal.hide-thumb::-webkit-slider-thumb,
   #pleasure.hide-thumb::-webkit-slider-thumb {
     opacity: 0;
   }
 
+  #stress.hide-thumb::-moz-range-thumb,
   #arousal.hide-thumb::-moz-range-thumb,
   #pleasure.hide-thumb::-moz-range-thumb {
     opacity: 0;
   }
 
-  #arousal.hide-thumb::-webkit-slider-thumb,
-  #pleasure.hide-thumb::-webkit-slider-thumb {
-    opacity: 0;
+  .single-pole-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 
-  #arousal.hide-thumb::-moz-range-thumb,
-  #pleasure.hide-thumb::-moz-range-thumb {
-    opacity: 0;
+  .single-pole-label {
+    width: 120px;
+    font-size: 12px;
+    color: #444;
+    line-height: 1.2;
+  }
+
+  .single-pole-label.left {
+    text-align: right;
+  }
+
+  .single-pole-label.right {
+    text-align: left;
   }
 
   .gradient-arrow {
@@ -209,6 +222,17 @@
 
 <!-- 1本目のスライダー: sleep - surprised（arousal） -->
 <div class="emotion-container">
+  <div class="emotion-slider-group">
+    <div class="single-pole-row">
+      <span class="single-pole-label left">全く感じていない</span>
+      <input type="range" id="stress" min="0" max="100" value="50" aria-label="Stress (0-100)">
+      <span class="single-pole-label right">きわめて強く感じている</span>
+    </div>
+  </div>
+</div>
+
+<!-- 2本目のスライダー: sleep - surprised（arousal） -->
+<div class="emotion-container">
   <img src="sleep.png" alt="Sleepy" class="emotion-icon">
   <div class="emotion-slider-group">
     <input type="range" id="arousal" min="0" max="100" value="50">
@@ -217,7 +241,7 @@
   <img src="surprised.png" alt="Surprised" class="emotion-icon">
 </div>
 
-<!-- 2本目のスライダー: sad - happy（pleasure） -->
+<!-- 3本目のスライダー: sad - happy（pleasure） -->
 <div class="emotion-container">
   <img src="sad.png" alt="Sad" class="emotion-icon">
   <div class="emotion-slider-group">
@@ -252,6 +276,7 @@
 </footer>
 
 <script>
+const stressSlider = document.getElementById('stress');
 const arousalSlider = document.getElementById('arousal');
 const pleasureSlider = document.getElementById('pleasure');
 const logList = document.getElementById('logList');
@@ -263,22 +288,35 @@ const submitButton = document.getElementById('submitButton');
 
 let logEntries = [];          // ログを保存する配列
 let lastLogTimestamp = '';    // 最後の操作ログのタイムスタンプ（HHMMSS）
-let hasInteracted = false;    // スライダーを動かしたか（保存後にリセット）
 let saveLock = false;         // 連打防止（保存処理中フラグ）
 let feedbackTimer = null;     // アニメーション用タイマー
+let touched = { stress: false, arousal: false, pleasure: false };
 
 function setSaveEnabled(enabled) {
   submitButton.disabled = !enabled;
 }
 
+function canSave() {
+  return touched.stress && touched.arousal && touched.pleasure;
+}
+
+function markTouched(key) {
+  touched[key] = true;
+  setSaveEnabled(canSave());
+}
+
 // Hide both thumbs until the user interacts again.
 function hideThumbs() {
+  stressSlider.classList.add('hide-thumb');
   arousalSlider.classList.add('hide-thumb');
   pleasureSlider.classList.add('hide-thumb');
 }
 
 // Show only the thumb for the slider the user touched.
 function showThumbFor(target) {
+  if (target === stressSlider) {
+    stressSlider.classList.remove('hide-thumb');
+  }
   if (target === arousalSlider) {
     arousalSlider.classList.remove('hide-thumb');
   }
@@ -309,14 +347,14 @@ function downloadCSV(content, fileName) {
 
 // CSV形式でのログ出力
 function exportLogToCSV() {
-  const header = 'Time,arousal,pleasure\n';
-  const rows = logEntries.map(entry => `${entry.time},${entry.arousal},${entry.pleasure}`).join('\n');
+  const header = 'Time,stress,arousal,pleasure\n';
+  const rows = logEntries.map(entry => `${entry.time},${entry.stress},${entry.arousal},${entry.pleasure}`).join('\n');
   const csvContent = header + rows;
 
   // ★ ファイル名に「今日の日付(YYYYMMDD)」を追加
-  // 例: 20260210_145756_PolarH10-HRV.csv
+  // 例: 20260213_131819_affectivesliderexp.csv
   const today = getTodayYYYYMMDD();
-  const fileName = `${today}_${lastLogTimestamp}_PolarH10-HRV.csv`;
+  const fileName = `${today}_${lastLogTimestamp}_affectivesliderexp.csv`;
 
   downloadCSV(csvContent, fileName);
 }
@@ -349,6 +387,7 @@ function addLogEntry() {
 
   const arousalValue = arousalSlider.value;    // arousal スライダーの値
   const pleasureValue = pleasureSlider.value;  // pleasure スライダーの値
+  const stressValue = stressSlider.value;      // stress スライダーの値
   const currentTime = new Date();              // タイムスタンプ
 
   // タイムスタンプを hh:mm:ss 形式に
@@ -360,6 +399,7 @@ function addLogEntry() {
   // ログを配列に追加
   logEntries.push({
     time: formattedTime,
+    stress: stressValue,
     arousal: arousalValue,
     pleasure: pleasureValue
   });
@@ -372,12 +412,12 @@ function addLogEntry() {
   flashSaveButton();
 
   // スライダーを中央に戻す
+  stressSlider.value = 50;
   arousalSlider.value = 50;
   pleasureSlider.value = 50;
   hideThumbs();
 
-  // 「未操作判定」をリセット（次の操作サイクルへ）
-  hasInteracted = false;
+  touched = { stress: false, arousal: false, pleasure: false };
   setSaveEnabled(false);
 
   // 連打防止解除（短時間だけ無効化して二重保存を物理的に防ぐ）
@@ -397,21 +437,22 @@ function updateLogDisplay() {
   logList.innerHTML = '';  // ログ表示をクリア
   logEntries.forEach(entry => {
     const logItem = document.createElement('li');
-    logItem.textContent = `time: ${entry.time}, arousal: ${entry.arousal}, pleasure: ${entry.pleasure}`;
+    logItem.textContent = `time: ${entry.time}, stress: ${entry.stress}, arousal: ${entry.arousal}, pleasure: ${entry.pleasure}`;
     logList.appendChild(logItem);
   });
 }
 
-// スライダーを動かしたら「操作あり」とみなす（追加）
-arousalSlider.addEventListener('input', (e) => {
-  hasInteracted = true;
+stressSlider.addEventListener('input', (e) => {
   showThumbFor(e.currentTarget);
-  setSaveEnabled(true);
+  markTouched('stress');
+});
+arousalSlider.addEventListener('input', (e) => {
+  showThumbFor(e.currentTarget);
+  markTouched('arousal');
 });
 pleasureSlider.addEventListener('input', (e) => {
-  hasInteracted = true;
   showThumbFor(e.currentTarget);
-  setSaveEnabled(true);
+  markTouched('pleasure');
 });
 
 // 操作ログの表示/非表示を切り替える
@@ -434,7 +475,7 @@ resetButton.onclick = function() {
   logEntries = [];       // ログ配列をクリア
   updateLogDisplay();    // 表示をクリア
   lastLogTimestamp = ''; // タイムスタンプをリセット
-  hasInteracted = false; // 操作状態もリセット
+  touched = { stress: false, arousal: false, pleasure: false };
   pulseElement(resetButton);
   hideThumbs();
   setSaveEnabled(false);
