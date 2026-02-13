@@ -373,7 +373,7 @@
       <iframe
         class="modal-frame"
         id="ratingFrame"
-        src="../affective_slider_exp/affective_slider_oasis_exp.html"
+        src=""
         title="Affective Slider"
       ></iframe>
       <div class="modal-footer">
@@ -385,6 +385,8 @@
   <script>
     const basePath = "../oasis_top80/";
     const NOTIFY_AUDIO = "pc980_startup_like_0_5s.mp3";
+    const RATING_PAGE_URL = "../affective_slider_exp/affective_slider_oasis_exp.html";
+    const RATING_PAGE_VERSION = "20260213-1";
     const QUADRANTS = {
       HVHA: {
         label: "HVHA",
@@ -587,6 +589,11 @@
       slide.style.setProperty("--to-scale", toScale);
       slide.style.setProperty("--duration-ms", `${durationMs}ms`);
       slide.style.setProperty("--fade-ms", `${fadeMs}ms`);
+    }
+
+    function loadRatingFrame() {
+      // Append a version query to avoid stale iframe cache on GitHub Pages.
+      ratingFrame.src = `${RATING_PAGE_URL}?v=${RATING_PAGE_VERSION}`;
     }
 
     function openRatingModal() {
@@ -843,6 +850,7 @@
     });
 
     fixation.classList.add("active");
+    loadRatingFrame();
     updateStatus(quadrantSelect.value);
   </script>
 </body>
