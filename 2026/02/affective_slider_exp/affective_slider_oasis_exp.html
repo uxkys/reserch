@@ -291,6 +291,7 @@ let lastLogTimestamp = '';    // 最後の操作ログのタイムスタンプ�
 let saveLock = false;         // 連打防止（保存処理中フラグ）
 let feedbackTimer = null;     // アニメーション用タイマー
 let touched = { stress: false, arousal: false, pleasure: false };
+let firstInteractionAtMs = null;
 
 function setSaveEnabled(enabled) {
   submitButton.disabled = !enabled;
@@ -302,6 +303,9 @@ function canSave() {
 
 function markTouched(key) {
   touched[key] = true;
+  if (firstInteractionAtMs === null) {
+    firstInteractionAtMs = Date.now();
+  }
   setSaveEnabled(canSave());
 }
 
@@ -389,6 +393,7 @@ function addLogEntry() {
   const pleasureValue = pleasureSlider.value;  // pleasure スライダーの値
   const stressValue = stressSlider.value;      // stress スライダーの値
   const currentTime = new Date();              // タイムスタンプ
+  const nowMs = Date.now();
 
   // タイムスタンプを hh:mm:ss 形式に
   const formattedTime = currentTime.toLocaleTimeString('ja-JP');
@@ -418,6 +423,8 @@ function addLogEntry() {
   hideThumbs();
 
   touched = { stress: false, arousal: false, pleasure: false };
+  const sliderRtMs = firstInteractionAtMs === null ? null : (nowMs - firstInteractionAtMs);
+  firstInteractionAtMs = null;
   setSaveEnabled(false);
 
   // 連打防止解除（短時間だけ無効化して二重保存を物理的に防ぐ）
@@ -428,7 +435,17 @@ function addLogEntry() {
 
   // Notify the parent viewer that a rating has been saved.
   if (window.parent && window.parent !== window) {
-    window.parent.postMessage({ type: 'affective-slider-saved' }, '*');
+    window.parent.postMessage({
+      type: 'affective-slider-saved',
+      payload: {
+        response: {
+          stress: Number(stressValue),
+          arousal: Number(arousalValue),
+          pleasure: Number(pleasureValue)
+        },
+        slider_rt_ms: sliderRtMs
+      }
+    }, '*');
   }
 }
 
@@ -476,6 +493,7 @@ resetButton.onclick = function() {
   updateLogDisplay();    // 表示をクリア
   lastLogTimestamp = ''; // タイムスタンプをリセット
   touched = { stress: false, arousal: false, pleasure: false };
+  firstInteractionAtMs = null;
   pulseElement(resetButton);
   hideThumbs();
   setSaveEnabled(false);

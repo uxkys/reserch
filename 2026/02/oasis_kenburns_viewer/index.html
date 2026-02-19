@@ -224,6 +224,7 @@
       margin: 4px 0 0;
     }
 
+
     .badge {
       display: inline-flex;
       align-items: center;
@@ -256,6 +257,11 @@
 
     .modal-overlay.open {
       display: flex;
+    }
+
+    body.presentation-mode .info-panel,
+    body.presentation-mode .controls {
+      display: none;
     }
 
     .modal-card {
@@ -315,21 +321,42 @@
 
     <div class="panel controls">
       <div class="row">
-        <label for="quadrant">象限</label>
+        <label for="quadrant">ブロック選択</label>
         <select id="quadrant">
-          <option value="HVHA">HVHA（高快・高覚醒 / Q1）</option>
-          <option value="LVHA">LVHA（低快・高覚醒 / Q2）</option>
-          <option value="LVLA">LVLA（低快・低覚醒 / Q3）</option>
-          <option value="HVLA">HVLA（高快・低覚醒 / Q4）</option>
+          <option value="Block 1">Block 1</option>
+          <option value="Block 2">Block 2</option>
+          <option value="Block 3">Block 3</option>
+          <option value="Block 4">Block 4</option>
+          <option value="Block 5">Block 5</option>
+          <option value="Block 6">Block 6</option>
+          <option value="Block 7">Block 7</option>
+          <option value="Block 8">Block 8</option>
         </select>
         <span class="badge" id="badge">10 images</span>
       </div>
 
       <div class="row">
-        <button class="primary" id="startBtn">開始</button>
+        <label for="participantIdInput">Participant ID</label>
+        <input id="participantIdInput" type="text" value="P01" />
+        <label for="seedInput">Seed</label>
+        <input id="seedInput" type="number" step="1" placeholder="auto" />
+        <label for="excludeUsedToggle">Reuse回避</label>
+        <input id="excludeUsedToggle" type="checkbox" checked />
+      </div>
+
+      <div class="row">
+        <label for="allocationFileInput">割付けJSON</label>
+        <input id="allocationFileInput" type="file" accept=".json" />
+      </div>
+
+      <div class="row">
+        <button class="primary" id="practiceBtn">練習を実行</button>
+        <button class="primary" id="sessionBtn">本試行を開始</button>
+        <button class="ghost" id="startBtn">再開</button>
         <button class="ghost" id="pauseBtn" disabled>一時停止</button>
         <button class="danger" id="resetBtn">リセット</button>
         <button class="ghost" id="downloadLogBtn">ログCSV</button>
+        <button class="ghost" id="downloadAllocBtn">割付けCSV</button>
         <button class="ghost" id="clearLogBtn">ログ消去</button>
       </div>
 
@@ -352,6 +379,10 @@
       </div>
       <div class="status">
         <div>
+          Block
+          <strong id="statusBlock">-</strong>
+        </div>
+        <div>
           象限
           <strong id="statusQuadrant">HVHA</strong>
         </div>
@@ -369,7 +400,7 @@
 
   <div class="modal-overlay" id="ratingModal" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="ratingModalTitle">
-      <div class="modal-header" id="ratingModalTitle">通知評価を入力してください / Please complete the rating</div>
+      <div class="modal-header" id="ratingModalTitle">評価を入力してください / Please complete the rating</div>
       <iframe
         class="modal-frame"
         id="ratingFrame"
@@ -386,69 +417,28 @@
     const basePath = "../oasis_top80/";
     const NOTIFY_AUDIO = "pc980_startup_like_0_5s.mp3";
     const RATING_PAGE_URL = "../affective_slider_exp/affective_slider_oasis_exp.html";
-    const RATING_PAGE_VERSION = "20260213-1";
-    const QUADRANTS = {
-      HVHA: {
-        label: "HVHA",
-        files: [
-          "Q1_I134_Cat_5.jpg",
-          "Q1_I256_Dog_6.jpg",
-          "Q1_I262_Dog_12.jpg",
-          "Q1_I268_Dog_18.jpg",
-          "Q1_I32_Baby_1.jpg",
-          "Q1_I334_Fireworks_1.jpg",
-          "Q1_I335_Fireworks_2.jpg",
-          "Q1_I336_Fireworks_3.jpg",
-          "Q1_I339_Fireworks_6.jpg",
-          "Q1_I463_Lake_9.jpg"
-        ]
-      },
-      HVLA: {
-        label: "HVLA",
-        files: [
-          "Q4_I182_Cotton_swabs_3.jpg",
-          "Q4_I254_Dog_4.jpg",
-          "Q4_I349_Flowers_6.jpg",
-          "Q4_I36_Baby_5.jpg",
-          "Q4_I402_Grass_4.jpg",
-          "Q4_I455_Lake_1.jpg",
-          "Q4_I456_Lake_2.jpg",
-          "Q4_I462_Lake_8.jpg",
-          "Q4_I464_Lake_10.jpg",
-          "Q4_I467_Lake_13.jpg"
-        ]
-      },
-      LVHA: {
-        label: "LVHA",
-        files: [
-          "Q2_I118_Car_accident_3.jpg",
-          "Q2_I150_Cemetery_5.jpg",
-          "Q2_I229_Destruction_6.jpg",
-          "Q2_I231_Destruction_8.jpg",
-          "Q2_I284_Dog_attack_3.jpg",
-          "Q2_I303_Explosion_2.jpg",
-          "Q2_I304_Explosion_3.jpg",
-          "Q2_I306_Explosion_5.jpg",
-          "Q2_I319_Fire_2.jpg",
-          "Q2_I328_Fire_11.jpg"
-        ]
-      },
-      LVLA: {
-        label: "LVLA",
-        files: [
-          "Q3_I129_Cardboard_3.jpg",
-          "Q3_I227_Destruction_4.jpg",
-          "Q3_I230_Destruction_7.jpg",
-          "Q3_I235_Destruction_2.jpg",
-          "Q3_I236_Destruction_3.jpg",
-          "Q3_I240_Dirt_5.jpg",
-          "Q3_I309_Feces_1.jpg",
-          "Q3_I310_Feces_2.jpg",
-          "Q3_I379_Garbage_dump_1.jpg",
-          "Q3_I380_Garbage_dump_2.jpg"
-        ]
-      }
+    const RATING_PAGE_VERSION = "20260213-2";
+    const NOTIF_BASE_MS = 2500;
+    const NOTIF_JITTER_RANGE_MS = 500;
+    const UI_LABELS = ["Condition A", "Condition B"];
+
+    const QUADRANT_POOLS = {
+      HVHA: ["Q1_I134_Cat_5.jpg","Q1_I256_Dog_6.jpg","Q1_I262_Dog_12.jpg","Q1_I268_Dog_18.jpg","Q1_I32_Baby_1.jpg","Q1_I334_Fireworks_1.jpg","Q1_I335_Fireworks_2.jpg","Q1_I336_Fireworks_3.jpg","Q1_I339_Fireworks_6.jpg","Q1_I463_Lake_9.jpg","Q1_I466_Lake_12.jpg","Q1_I468_Lake_14.jpg","Q1_I469_Lake_15.jpg","Q1_I516_Nature_1.jpg","Q1_I531_Nude_couple_5.jpg","Q1_I59_Beach_1.jpg","Q1_I60_Beach_2.jpg","Q1_I616_Penguins_2.jpg","Q1_I660_Rainbow_1.jpg","Q1_I661_Rainbow_2.jpg"],
+      LVHA: ["Q2_I118_Car_accident_3.jpg","Q2_I150_Cemetery_5.jpg","Q2_I229_Destruction_6.jpg","Q2_I231_Destruction_8.jpg","Q2_I284_Dog_attack_3.jpg","Q2_I303_Explosion_2.jpg","Q2_I304_Explosion_3.jpg","Q2_I306_Explosion_5.jpg","Q2_I319_Fire_2.jpg","Q2_I328_Fire_11.jpg","Q2_I343_Flood_3.jpg","Q2_I451_KKK_rally_1.jpg","Q2_I638_Plane_crash_3.jpg","Q2_I644_Police_5.jpg","Q2_I696_Sad_face_9.jpg","Q2_I788_Soldiers_7.jpg","Q2_I848_Tornado_1.jpg","Q2_I857_Volcano_2.jpg","Q2_I865_War_2.jpg","Q2_I871_War_8.jpg"],
+      LVLA: ["Q3_I129_Cardboard_3.jpg","Q3_I227_Destruction_4.jpg","Q3_I230_Destruction_7.jpg","Q3_I235_Destruction_2.jpg","Q3_I236_Destruction_3.jpg","Q3_I240_Dirt_5.jpg","Q3_I309_Feces_1.jpg","Q3_I310_Feces_2.jpg","Q3_I379_Garbage_dump_1.jpg","Q3_I380_Garbage_dump_2.jpg","Q3_I381_Garbage_dump_3.jpg","Q3_I382_Garbage_dump_4.jpg","Q3_I384_Garbage_dump_6.jpg","Q3_I386_Garbage_dump_8.jpg","Q3_I443_Jail_2.jpg","Q3_I600_Paperclips_1.jpg","Q3_I749_Sidewalk_6.jpg","Q3_I862_Wall_4.jpg","Q3_I863_Wall_5.jpg","Q3_I891_Yarn_1.jpg"],
+      HVLA: ["Q4_I182_Cotton_swabs_3.jpg","Q4_I254_Dog_4.jpg","Q4_I349_Flowers_6.jpg","Q4_I36_Baby_5.jpg","Q4_I402_Grass_4.jpg","Q4_I455_Lake_1.jpg","Q4_I456_Lake_2.jpg","Q4_I462_Lake_8.jpg","Q4_I464_Lake_10.jpg","Q4_I467_Lake_13.jpg","Q4_I587_Office_supplies_2.jpg","Q4_I597_Paper_3.jpg","Q4_I602_Paperclips_3.jpg","Q4_I673_Rocks_6.jpg","Q4_I743_Siblings_1.jpg","Q4_I74_Bird_1.jpg","Q4_I859_Wall_1.jpg","Q4_I860_Wall_2.jpg","Q4_I861_Wall_3.jpg","Q4_I95_Bricks_1.jpg"]
     };
+
+    const PATTERNS = [
+      [{ q: "HVHA", c: "Push" }, { q: "HVLA", c: "Push" }, { q: "LVHA", c: "Push" }, { q: "LVLA", c: "Push" }, { q: "LVHA", c: "Poke" }, { q: "LVLA", c: "Poke" }, { q: "HVHA", c: "Poke" }, { q: "HVLA", c: "Poke" }],
+      [{ q: "HVLA", c: "Push" }, { q: "LVHA", c: "Push" }, { q: "LVLA", c: "Push" }, { q: "HVHA", c: "Push" }, { q: "LVLA", c: "Poke" }, { q: "HVHA", c: "Poke" }, { q: "HVLA", c: "Poke" }, { q: "LVHA", c: "Poke" }],
+      [{ q: "LVHA", c: "Push" }, { q: "LVLA", c: "Push" }, { q: "HVHA", c: "Push" }, { q: "HVLA", c: "Push" }, { q: "HVHA", c: "Poke" }, { q: "HVLA", c: "Poke" }, { q: "LVHA", c: "Poke" }, { q: "LVLA", c: "Poke" }],
+      [{ q: "LVLA", c: "Push" }, { q: "HVHA", c: "Push" }, { q: "HVLA", c: "Push" }, { q: "LVHA", c: "Push" }, { q: "HVLA", c: "Poke" }, { q: "LVHA", c: "Poke" }, { q: "LVLA", c: "Poke" }, { q: "HVHA", c: "Poke" }],
+      [{ q: "HVHA", c: "Poke" }, { q: "HVLA", c: "Poke" }, { q: "LVHA", c: "Poke" }, { q: "LVLA", c: "Poke" }, { q: "LVHA", c: "Push" }, { q: "LVLA", c: "Push" }, { q: "HVHA", c: "Push" }, { q: "HVLA", c: "Push" }],
+      [{ q: "HVLA", c: "Poke" }, { q: "LVHA", c: "Poke" }, { q: "LVLA", c: "Poke" }, { q: "HVHA", c: "Poke" }, { q: "LVLA", c: "Push" }, { q: "HVHA", c: "Push" }, { q: "HVLA", c: "Push" }, { q: "LVHA", c: "Push" }],
+      [{ q: "LVHA", c: "Poke" }, { q: "LVLA", c: "Poke" }, { q: "HVHA", c: "Poke" }, { q: "HVLA", c: "Poke" }, { q: "HVHA", c: "Push" }, { q: "HVLA", c: "Push" }, { q: "LVHA", c: "Push" }, { q: "LVLA", c: "Push" }],
+      [{ q: "LVLA", c: "Poke" }, { q: "HVHA", c: "Poke" }, { q: "HVLA", c: "Poke" }, { q: "LVHA", c: "Poke" }, { q: "HVLA", c: "Push" }, { q: "LVHA", c: "Push" }, { q: "LVLA", c: "Push" }, { q: "HVHA", c: "Push" }]
+    ];
 
     const slideA = document.getElementById("slideA");
     const slideB = document.getElementById("slideB");
@@ -456,17 +446,24 @@
     const infoPanel = document.getElementById("infoPanel");
     const toggleInfoBtn = document.getElementById("toggleInfoBtn");
     const quadrantSelect = document.getElementById("quadrant");
+    const participantIdInput = document.getElementById("participantIdInput");
+    const seedInput = document.getElementById("seedInput");
+    const excludeUsedToggle = document.getElementById("excludeUsedToggle");
+    const allocationFileInput = document.getElementById("allocationFileInput");
+    const practiceBtn = document.getElementById("practiceBtn");
+    const sessionBtn = document.getElementById("sessionBtn");
     const startBtn = document.getElementById("startBtn");
     const pauseBtn = document.getElementById("pauseBtn");
     const resetBtn = document.getElementById("resetBtn");
     const downloadLogBtn = document.getElementById("downloadLogBtn");
+    const downloadAllocBtn = document.getElementById("downloadAllocBtn");
     const clearLogBtn = document.getElementById("clearLogBtn");
     const durationInput = document.getElementById("durationInput");
     const fadeInput = document.getElementById("fadeInput");
     const isiInput = document.getElementById("isiInput");
     const fixation = document.getElementById("fixation");
-
     const statusQuadrant = document.getElementById("statusQuadrant");
+    const statusBlock = document.getElementById("statusBlock");
     const statusProgress = document.getElementById("statusProgress");
     const statusFile = document.getElementById("statusFile");
     const badge = document.getElementById("badge");
@@ -478,21 +475,29 @@
     const audio = new Audio(NOTIFY_AUDIO);
     audio.preload = "auto";
 
-    let currentIndex = 0;
     let activeSlide = slideA;
     let idleSlide = slideB;
     let timerId = null;
+    let notificationTimerId = null;
     let isPlaying = false;
-    let remainingMs = 0;
-    let lastStartTime = 0;
     let showingImage = true;
-    let notificationPlayed = false;
-    let hasStarted = false;
-    let logStartTime = null;
+    let currentIndex = 0;
+    let lastStartTime = 0;
+    let remainingMs = 0;
     let modalOpen = false;
-    let ratingSavedForCurrentPause = false;
     let modalPurpose = null;
+    let ratingSavedForCurrentPause = false;
+    let loadedAllocationRows = [];
+    let seedValue = null;
+    let sessionBlocks = [];
+    let sessionPointer = 0;
+    let currentBlock = null;
+    let currentSessionDatetime = "";
+    let logStartTime = null;
+    let ratingPayloadLatest = null;
+    const usedImages = new Set();
     const logRows = [];
+    const assignmentRows = [];
 
     const moves = [
       { fromX: "-4%", fromY: "-3%", toX: "2%", toY: "2%" },
@@ -501,74 +506,264 @@
       { fromX: "2%", fromY: "3%", toX: "-3%", toY: "-2%" }
     ];
 
-    // 0-based index (4-9 => 5枚目〜10枚目の範囲)
-    const NOTIFY_INDEX = {
-      HVHA: 4,
-      HVLA: 6,
-      LVHA: 5,
-      LVLA: 8
-    };
-
-    function getNotifyIndex(quadrantKey) {
-      const index = NOTIFY_INDEX[quadrantKey];
-      if (typeof index === "number") return index;
-      return 4;
+    function hashStringToSeed(text) {
+      let h = 2166136261 >>> 0;
+      for (let i = 0; i < text.length; i += 1) {
+        h ^= text.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
     }
 
-    function getConfig() {
-      const durationMs = Math.max(1000, Number(durationInput.value) || 5000);
-      const fadeMs = Math.max(0, Number(fadeInput.value) || 0);
-      const isiMs = Math.max(0, Number(isiInput.value) || 0);
-      return { durationMs, fadeMs, isiMs };
+    function mulberry32(a) {
+      return function() {
+        let t = a += 0x6d2b79f5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function createRng(seed) {
+      return mulberry32(seed >>> 0);
+    }
+
+    function randInt(rng, min, max) {
+      return min + Math.floor(rng() * (max - min + 1));
+    }
+
+    function shuffledCopy(arr, rng) {
+      const copy = arr.slice();
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = randInt(rng, 0, i);
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
     }
 
     function formatDateTime(date) {
-      const pad = (n) => String(n).padStart(2, "0");
-      return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ` +
-             `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+      const p = (n) => String(n).padStart(2, "0");
+      return `${date.getFullYear()}/${p(date.getMonth() + 1)}/${p(date.getDate())} ${p(date.getHours())}:${p(date.getMinutes())}:${p(date.getSeconds())}`;
+    }
+
+    function formatCompact(date) {
+      const p = (n) => String(n).padStart(2, "0");
+      return `${date.getFullYear()}${p(date.getMonth() + 1)}${p(date.getDate())}_${p(date.getHours())}${p(date.getMinutes())}${p(date.getSeconds())}`;
     }
 
     function formatElapsed(ms) {
-      const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      return `${minutes}:${String(seconds).padStart(2, "0")}`;
+      const s = Math.max(0, Math.floor(ms / 1000));
+      const m = Math.floor(s / 60);
+      return `${m}:${String(s % 60).padStart(2, "0")}`;
     }
 
-    function logEvent(event, detail = "") {
-      const now = new Date();
-      if (!logStartTime) logStartTime = now;
-      const elapsed = formatElapsed(now - logStartTime);
-      const quadrantKey = quadrantSelect.value;
-      const file = QUADRANTS[quadrantKey]?.files?.[currentIndex] || "";
-      logRows.push({
-        DateTime: formatDateTime(now),
-        Elapsed: elapsed,
-        Event: event,
-        Quadrant: quadrantKey,
-        Index: currentIndex + 1,
-        File: file,
-        Detail: detail
-      });
+    function getParticipantId() {
+      return (participantIdInput.value || "P00").trim() || "P00";
     }
 
-    function downloadLogCsv() {
-      const header = ["DateTime","Elapsed","Event","Quadrant","Index","File","Detail"];
-      const lines = [header.join(",")];
-      for (const row of logRows) {
-        const values = header.map((key) => {
-          const value = row[key] ?? "";
-          const text = String(value).replace(/\"/g, "\"\"");
-          return /[\",\n]/.test(text) ? `"${text}"` : text;
-        });
-        lines.push(values.join(","));
+    function getSeed() {
+      const user = (seedInput.value || "").trim();
+      if (user !== "") return Number(user) >>> 0;
+      const derived = hashStringToSeed(getParticipantId());
+      seedInput.value = String(derived);
+      return derived;
+    }
+
+    function getConfig() {
+      return {
+        durationMs: Math.max(1000, Number(durationInput.value) || 5000),
+        fadeMs: Math.max(0, Number(fadeInput.value) || 0),
+        isiMs: Math.max(0, Number(isiInput.value) || 0)
+      };
+    }
+
+    function computeNotifOnsetMsFromBlockStart(notifTrial, onsetInTrialMs, cfg) {
+      return (notifTrial - 1) * (cfg.durationMs + cfg.isiMs) + onsetInTrialMs;
+    }
+
+    function sampleImages(pool, sampleN, rng, useGlobalNoRepeat, quadrant) {
+      let candidates = pool.slice();
+      let note = "block_no_repeat_only";
+      if (useGlobalNoRepeat) {
+        const filtered = candidates.filter((x) => !usedImages.has(x));
+        if (filtered.length >= sampleN) {
+          candidates = filtered;
+          note = "participant_no_repeat_enabled";
+        } else {
+          note = `participant_no_repeat_fallback:${quadrant}`;
+        }
       }
+      const sampled = shuffledCopy(candidates, rng).slice(0, sampleN);
+      sampled.forEach((f) => usedImages.add(f));
+      return { sampled, note };
+    }
+
+    function buildUiConditionMap(rng) {
+      const flip = rng() < 0.5;
+      return flip
+        ? { Push: UI_LABELS[0], Poke: UI_LABELS[1] }
+        : { Push: UI_LABELS[1], Poke: UI_LABELS[0] };
+    }
+
+    function resolvePatternIndex(participantId) {
+      const num = Number(String(participantId).replace(/[^\d]/g, ""));
+      if (Number.isFinite(num) && num > 0) return (num - 1) % PATTERNS.length;
+      return hashStringToSeed(participantId) % PATTERNS.length;
+    }
+
+    function selectNotifTrial(trueCondition, rng) {
+      if (trueCondition === "Push") return randInt(rng, 2, 9);
+      if (trueCondition === "Poke") return randInt(rng, 6, 9);
+      return randInt(rng, 4, 8);
+    }
+
+    function selectJitterMs(rng) {
+      return randInt(rng, -NOTIF_JITTER_RANGE_MS, NOTIF_JITTER_RANGE_MS);
+    }
+
+    function generateSessionBlocks() {
+      const participantId = getParticipantId();
+      const cfg = getConfig();
+      seedValue = getSeed();
+      const rng = createRng(seedValue);
+      const uiMap = buildUiConditionMap(rng);
+      const patternIdx = resolvePatternIndex(participantId);
+      const basePattern = PATTERNS[patternIdx];
+      sessionBlocks = [];
+      assignmentRows.length = 0;
+      const useNoRepeat = excludeUsedToggle.checked;
+
+      for (let i = 0; i < basePattern.length; i += 1) {
+        const row = basePattern[i];
+        const { sampled, note } = sampleImages(QUADRANT_POOLS[row.q], 10, rng, useNoRepeat, row.q);
+        const jitterMs = selectJitterMs(rng);
+        const notifTrial = selectNotifTrial(row.c, rng);
+        const onsetInTrial = NOTIF_BASE_MS + jitterMs;
+        const onsetBlock = computeNotifOnsetMsFromBlockStart(notifTrial, onsetInTrial, cfg);
+        const block = {
+          block_index: i + 1,
+          is_practice: false,
+          quadrant: row.q,
+          true_condition: row.c,
+          ui_label: uiMap[row.c],
+          sampled_image_ids: sampled,
+          notif_trial: notifTrial,
+          jitter_ms: jitterMs,
+          notif_onset_ms_from_trial_start: onsetInTrial,
+          notif_onset_ms_from_block_start: onsetBlock,
+          random_seed: seedValue,
+          sample_note: note
+        };
+        sessionBlocks.push(block);
+        assignmentRows.push({
+          participant_id: participantId,
+          block_index: block.block_index,
+          quadrant: block.quadrant,
+          true_condition: block.true_condition,
+          ui_label: block.ui_label,
+          notif_trial: block.notif_trial,
+          notif_onset_ms_from_trial_start: block.notif_onset_ms_from_trial_start,
+          random_seed: block.random_seed,
+          sampled_image_ids: block.sampled_image_ids.join("|"),
+          jitter_ms: block.jitter_ms,
+          is_practice: false
+        });
+      }
+      sessionPointer = 0;
+      logEvent("session_generated", { detail: `pattern=${patternIdx + 1}`, sampled_image_ids: "" });
+    }
+
+    function generateBlocksFromAllocation(rows) {
+      const participantId = getParticipantId();
+      const cfg = getConfig();
+      const matched = rows.filter((r) => String(r.participant_id) === participantId).sort((a, b) => Number(a.block_index) - Number(b.block_index));
+      if (matched.length === 0) return false;
+      sessionBlocks = matched.map((r, idx) => {
+        const sampled = Array.isArray(r.sampled_image_ids)
+          ? r.sampled_image_ids.slice(0, 10)
+          : String(r.sampled_image_ids || "").split("|").filter(Boolean).slice(0, 10);
+        const notifTrial = Number(r.notif_trial);
+        const jitterMs = Number(r.jitter_ms);
+        const onsetTrial = Number(r.notif_onset_ms_from_trial_start);
+        return {
+          block_index: idx + 1,
+          is_practice: false,
+          quadrant: r.quadrant,
+          true_condition: r.true_condition,
+          ui_label: r.ui_label,
+          sampled_image_ids: sampled,
+          notif_trial: Number.isFinite(notifTrial) ? notifTrial : 2,
+          jitter_ms: Number.isFinite(jitterMs) ? jitterMs : 0,
+          notif_onset_ms_from_trial_start: Number.isFinite(onsetTrial) ? onsetTrial : NOTIF_BASE_MS,
+          notif_onset_ms_from_block_start: computeNotifOnsetMsFromBlockStart(
+            Number.isFinite(notifTrial) ? notifTrial : 2,
+            Number.isFinite(onsetTrial) ? onsetTrial : NOTIF_BASE_MS,
+            cfg
+          ),
+          random_seed: Number(r.random_seed) || getSeed(),
+          sample_note: "from_allocation_table"
+        };
+      });
+      assignmentRows.length = 0;
+      sessionBlocks.forEach((b) => assignmentRows.push({
+        participant_id: participantId,
+        block_index: b.block_index,
+        quadrant: b.quadrant,
+        true_condition: b.true_condition,
+        ui_label: b.ui_label,
+        notif_trial: b.notif_trial,
+        notif_onset_ms_from_trial_start: b.notif_onset_ms_from_trial_start,
+        random_seed: b.random_seed,
+        sampled_image_ids: b.sampled_image_ids.join("|"),
+        jitter_ms: b.jitter_ms,
+        is_practice: false
+      }));
+      sessionPointer = 0;
+      logEvent("session_loaded_from_allocation", { detail: `rows=${sessionBlocks.length}`, sampled_image_ids: "" });
+      return true;
+    }
+
+    function generatePracticeBlock() {
+      const participantId = getParticipantId();
+      const cfg = getConfig();
+      seedValue = getSeed();
+      const rng = createRng((seedValue + 9871) >>> 0);
+      const allImages = Object.values(QUADRANT_POOLS).flat();
+      const sampled = shuffledCopy(allImages, rng).slice(0, 10);
+      const jitterMs = selectJitterMs(rng);
+      const notifTrial = randInt(rng, 4, 8);
+      const onsetInTrial = NOTIF_BASE_MS + jitterMs;
+      const block = {
+        block_index: 1,
+        is_practice: true,
+        quadrant: "MIXED",
+        true_condition: "Practice",
+        ui_label: "Practice",
+        sampled_image_ids: sampled,
+        notif_trial: notifTrial,
+        jitter_ms: jitterMs,
+        notif_onset_ms_from_trial_start: onsetInTrial,
+        notif_onset_ms_from_block_start: computeNotifOnsetMsFromBlockStart(notifTrial, onsetInTrial, cfg),
+        random_seed: seedValue,
+        sample_note: `practice_participant=${participantId}`
+      };
+      return block;
+    }
+
+    function escapeCsv(v) {
+      const text = String(v ?? "");
+      const escaped = text.replace(/"/g, "\"\"");
+      return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
+    }
+
+    function downloadCsv(rows, filename, header) {
+      const lines = [header.join(",")];
+      rows.forEach((row) => {
+        lines.push(header.map((h) => escapeCsv(row[h])).join(","));
+      });
       const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      const stamp = new Date();
-      const filename = `${stamp.getFullYear()}${String(stamp.getMonth()+1).padStart(2,"0")}${String(stamp.getDate()).padStart(2,"0")}_` +
-        `${String(stamp.getHours()).padStart(2,"0")}${String(stamp.getMinutes()).padStart(2,"0")}${String(stamp.getSeconds()).padStart(2,"0")}_BaselineResults.csv`;
       a.href = url;
       a.download = filename;
       document.body.appendChild(a);
@@ -577,12 +772,34 @@
       URL.revokeObjectURL(url);
     }
 
+    function downloadLogCsv() {
+      const header = [
+        "participant_id","session_datetime","DateTime","Elapsed","event","detail","block_index","is_practice",
+        "quadrant","true_condition","ui_label","trial_index","file","notif_trial","jitter_ms",
+        "notif_onset_ms_from_trial_start","notif_onset_ms_from_block_start","slider_response","slider_rt_ms",
+        "sampled_image_ids","random_seed","sample_note"
+      ];
+      const stamp = formatCompact(new Date());
+      const name = `oasis_log_${getParticipantId()}_${stamp}.csv`;
+      downloadCsv(logRows, name, header);
+    }
+
+    function downloadAssignmentCsv() {
+      const header = [
+        "participant_id","block_index","quadrant","true_condition","ui_label","notif_trial",
+        "notif_onset_ms_from_trial_start","random_seed","sampled_image_ids","jitter_ms","is_practice"
+      ];
+      const stamp = formatCompact(new Date());
+      const name = `assignment_${getParticipantId()}_${stamp}.csv`;
+      downloadCsv(assignmentRows, name, header);
+    }
+
     function setKenBurns(slide) {
       const { durationMs, fadeMs } = getConfig();
-      const move = moves[Math.floor(Math.random() * moves.length)];
-      const fromScale = (1.03 + Math.random() * 0.04).toFixed(3);
-      const toScale = (1.08 + Math.random() * 0.05).toFixed(3);
-
+      const rng = createRng(hashStringToSeed(`${seedValue || 0}:${Date.now()}`));
+      const move = moves[randInt(rng, 0, moves.length - 1)];
+      const fromScale = (1.03 + rng() * 0.04).toFixed(3);
+      const toScale = (1.08 + rng() * 0.05).toFixed(3);
       slide.style.setProperty("--from-x", move.fromX);
       slide.style.setProperty("--from-y", move.fromY);
       slide.style.setProperty("--to-x", move.toX);
@@ -593,8 +810,63 @@
       slide.style.setProperty("--fade-ms", `${fadeMs}ms`);
     }
 
+    function updatePresentationMode() {
+      const hideControls = isPlaying && !modalOpen;
+      document.body.classList.toggle("presentation-mode", hideControls);
+    }
+
+    function updateStatus() {
+      const files = currentBlock ? currentBlock.sampled_image_ids : [];
+      const totalBlocks = currentBlock
+        ? (currentBlock.is_practice ? 1 : (sessionBlocks.length || 8))
+        : (sessionBlocks.length || 8);
+      statusBlock.textContent = currentBlock ? `${currentBlock.block_index} / ${totalBlocks}` : "-";
+      statusQuadrant.textContent = currentBlock ? `${currentBlock.quadrant} / ${currentBlock.ui_label}` : quadrantSelect.value;
+      statusProgress.textContent = files.length ? `${Math.min(currentIndex + 1, files.length)} / ${files.length}` : "0 / 10";
+      statusFile.textContent = files[currentIndex] || "-";
+      badge.textContent = `${files.length || 10} images`;
+    }
+
+    function swapSlides() {
+      const t = activeSlide;
+      activeSlide = idleSlide;
+      idleSlide = t;
+    }
+
+    function logEvent(event, extra = {}) {
+      const now = new Date();
+      if (!logStartTime) logStartTime = now;
+      const elapsed = formatElapsed(now - logStartTime);
+      const trialIndex = currentIndex + 1;
+      const file = currentBlock?.sampled_image_ids?.[currentIndex] || "";
+      const row = {
+        participant_id: getParticipantId(),
+        session_datetime: currentSessionDatetime,
+        DateTime: formatDateTime(now),
+        Elapsed: elapsed,
+        event,
+        detail: extra.detail || "",
+        block_index: currentBlock ? currentBlock.block_index : "",
+        is_practice: currentBlock ? String(currentBlock.is_practice) : "",
+        quadrant: currentBlock ? currentBlock.quadrant : "",
+        true_condition: currentBlock ? currentBlock.true_condition : "",
+        ui_label: currentBlock ? currentBlock.ui_label : "",
+        trial_index: trialIndex,
+        file,
+        notif_trial: currentBlock ? currentBlock.notif_trial : "",
+        jitter_ms: currentBlock ? currentBlock.jitter_ms : "",
+        notif_onset_ms_from_trial_start: currentBlock ? currentBlock.notif_onset_ms_from_trial_start : "",
+        notif_onset_ms_from_block_start: currentBlock ? currentBlock.notif_onset_ms_from_block_start : "",
+        slider_response: extra.slider_response || (ratingPayloadLatest ? JSON.stringify(ratingPayloadLatest.response || {}) : ""),
+        slider_rt_ms: extra.slider_rt_ms ?? (ratingPayloadLatest?.slider_rt_ms ?? ""),
+        sampled_image_ids: extra.sampled_image_ids ?? (currentBlock ? currentBlock.sampled_image_ids.join("|") : ""),
+        random_seed: currentBlock ? currentBlock.random_seed : (seedValue ?? ""),
+        sample_note: currentBlock ? currentBlock.sample_note : ""
+      };
+      logRows.push(row);
+    }
+
     function loadRatingFrame() {
-      // Append a version query to avoid stale iframe cache on GitHub Pages.
       ratingFrame.src = `${RATING_PAGE_URL}?v=${RATING_PAGE_VERSION}`;
     }
 
@@ -610,97 +882,78 @@
       modalPurpose = purpose;
       ratingSavedForCurrentPause = false;
       ratingDoneBtn.disabled = true;
-      if (purpose === "pre") {
-        ratingModalTitle.textContent = "開始前の評価を入力してください / Please complete the pre-block rating";
-      } else if (purpose === "post") {
-        ratingModalTitle.textContent = "終了時の評価を入力してください / Please complete the post-block rating";
-      } else {
-        ratingModalTitle.textContent = "通知評価を入力してください / Please complete the rating";
-      }
+      if (purpose === "pre") ratingModalTitle.textContent = "開始前評価を入力してください / Pre-block rating";
+      else if (purpose === "post") ratingModalTitle.textContent = "終了時評価を入力してください / Post-block rating";
+      else ratingModalTitle.textContent = "途中評価を入力してください / In-block rating";
       ratingModal.classList.add("open");
       ratingModal.setAttribute("aria-hidden", "false");
-      logEvent("rating_modal_open", purpose);
+      logEvent("rating_modal_open", { detail: purpose });
+      updatePresentationMode();
     }
 
     function closeRatingModal() {
       if (!modalOpen) return;
-      modalOpen = false;
-      ratingDoneBtn.disabled = true;
       ratingModal.classList.remove("open");
       ratingModal.setAttribute("aria-hidden", "true");
-      logEvent("rating_modal_close", modalPurpose || "");
+      ratingDoneBtn.disabled = true;
+      logEvent("rating_modal_close", { detail: modalPurpose || "" });
       modalPurpose = null;
+      modalOpen = false;
+      updatePresentationMode();
     }
 
-    function updateStatus(quadrantKey) {
-      const files = QUADRANTS[quadrantKey].files;
-      statusQuadrant.textContent = quadrantKey;
-      statusProgress.textContent = `${Math.min(currentIndex + 1, files.length)} / ${files.length}`;
-      statusFile.textContent = files[currentIndex - 1] || "-";
-      badge.textContent = `${files.length} images`;
+    function clearTimers() {
+      clearTimeout(timerId);
+      clearTimeout(notificationTimerId);
+      timerId = null;
+      notificationTimerId = null;
     }
 
-    function swapSlides() {
-      const temp = activeSlide;
-      activeSlide = idleSlide;
-      idleSlide = temp;
-    }
-
-    async function playNotificationIfNeeded() {
-      if (notificationPlayed) return;
-      const quadrantKey = quadrantSelect.value;
-      const notifyIndex = getNotifyIndex(quadrantKey);
-      if (currentIndex !== notifyIndex) return;
-
-      notificationPlayed = true;
-      logEvent("notification");
-      pausePlayback();
+    async function triggerNotification() {
+      if (!currentBlock || !isPlaying || !showingImage || currentBlock.notificationFired) return;
+      currentBlock.notificationFired = true;
+      logEvent("notification_onset");
+      pausePlayback("notification");
       openRatingModal("notification");
       try {
         audio.currentTime = 0;
         await audio.play();
       } catch (err) {
-        // Autoplay制限などで失敗した場合は停止状態を維持
+        logEvent("notification_audio_failed", { detail: String(err) });
       }
     }
 
     function showImage(index) {
-      const quadrantKey = quadrantSelect.value;
-      const files = QUADRANTS[quadrantKey].files;
-      if (index >= files.length) {
-        stopPlayback(true);
-        return;
-      }
-
+      if (!currentBlock) return;
+      const files = currentBlock.sampled_image_ids;
+      if (index >= files.length) return;
       const file = files[index];
       fixation.classList.remove("active");
       idleSlide.classList.remove("active");
       idleSlide.style.backgroundImage = `url(${basePath}${file})`;
       setKenBurns(idleSlide);
-
-      // restart animation
       idleSlide.style.animation = "none";
       void idleSlide.offsetHeight;
       idleSlide.style.animation = "kenburns var(--duration-ms) linear forwards";
-
       idleSlide.classList.add("active");
       activeSlide.classList.remove("active");
-
       swapSlides();
-      updateStatus(quadrantKey);
-      logEvent("image", `shown ${index + 1}/${files.length}`);
-      playNotificationIfNeeded();
+      updateStatus();
+      logEvent("image");
+
+      if (index + 1 === currentBlock.notif_trial) {
+        clearTimeout(notificationTimerId);
+        notificationTimerId = setTimeout(() => {
+          triggerNotification();
+        }, currentBlock.notif_onset_ms_from_trial_start);
+      }
     }
 
-    function scheduleNext(durationMs) {
+    function scheduleNext(ms) {
       clearTimeout(timerId);
       timerId = setTimeout(() => {
-        if (!isPlaying) return;
-
-        const config = getConfig();
-        const quadrantKey = quadrantSelect.value;
-        const files = QUADRANTS[quadrantKey].files;
-
+        if (!isPlaying || !currentBlock) return;
+        const cfg = getConfig();
         if (showingImage) {
           fixation.classList.add("active");
           activeSlide.classList.remove("active");
@@ -708,145 +961,209 @@
           showingImage = false;
           lastStartTime = Date.now();
           logEvent("fixation");
-          if (currentIndex >= files.length - 1) {
-            clearTimeout(timerId);
+          if (currentIndex >= currentBlock.sampled_image_ids.length - 1) {
             isPlaying = false;
             viewer.classList.remove("paused");
-            startBtn.disabled = true;
             pauseBtn.disabled = true;
-            quadrantSelect.disabled = true;
-            remainingMs = 0;
-            showingImage = true;
-            logEvent("block_end");
+            startBtn.disabled = true;
             openRatingModal("post");
+            logEvent("block_end");
             return;
           }
-          scheduleNext(config.isiMs);
+          scheduleNext(cfg.isiMs);
           return;
         }
-
-        fixation.classList.remove("active");
         currentIndex += 1;
-        showImage(currentIndex);
         showingImage = true;
         lastStartTime = Date.now();
-        scheduleNext(config.durationMs);
-      }, durationMs);
+        showImage(currentIndex);
+        scheduleNext(cfg.durationMs);
+      }, ms);
     }
 
     function startPlayback() {
-      if (isPlaying) return;
-      const quadrantKey = quadrantSelect.value;
+      if (!currentBlock) return;
+      clearTimers();
       currentIndex = 0;
-      notificationPlayed = false;
-      hasStarted = true;
+      currentBlock.notificationFired = false;
+      ratingPayloadLatest = null;
       isPlaying = true;
+      showingImage = true;
       viewer.classList.remove("paused");
       startBtn.disabled = true;
       pauseBtn.disabled = false;
-      quadrantSelect.disabled = true;
-
+      sessionBtn.disabled = true;
+      practiceBtn.disabled = true;
+      updateStatus();
       showImage(currentIndex);
-      showingImage = true;
-      const config = getConfig();
+      const cfg = getConfig();
       lastStartTime = Date.now();
-      scheduleNext(config.durationMs);
-      logEvent("start");
+      scheduleNext(cfg.durationMs);
+      logEvent("block_start");
+      updatePresentationMode();
     }
 
-    function pausePlayback() {
+    function pausePlayback(reason = "manual") {
       if (!isPlaying) return;
-      const config = getConfig();
+      const cfg = getConfig();
       const elapsed = Date.now() - lastStartTime;
-      remainingMs = Math.max(0, (showingImage ? config.durationMs : config.isiMs) - elapsed);
-      clearTimeout(timerId);
+      remainingMs = Math.max(0, (showingImage ? cfg.durationMs : cfg.isiMs) - elapsed);
+      clearTimers();
       isPlaying = false;
       viewer.classList.add("paused");
       startBtn.disabled = false;
       pauseBtn.disabled = true;
-      logEvent("pause");
+      logEvent("pause", { detail: reason });
+      updatePresentationMode();
     }
 
     function resumePlayback() {
-      if (isPlaying) return;
-      if (currentIndex >= QUADRANTS[quadrantSelect.value].files.length) return;
+      if (isPlaying || !currentBlock) return;
+      if (modalOpen) return;
       isPlaying = true;
       viewer.classList.remove("paused");
       startBtn.disabled = true;
       pauseBtn.disabled = false;
       lastStartTime = Date.now();
-      const config = getConfig();
-      scheduleNext(remainingMs || (showingImage ? config.durationMs : config.isiMs));
+      const cfg = getConfig();
+      scheduleNext(remainingMs || (showingImage ? cfg.durationMs : cfg.isiMs));
       logEvent("resume");
+      updatePresentationMode();
     }
 
-    function stopPlayback(resetIndex) {
-      clearTimeout(timerId);
+    function finalizeBlock() {
+      clearTimers();
       isPlaying = false;
       viewer.classList.remove("paused");
-      closeRatingModal();
-      startBtn.disabled = false;
       pauseBtn.disabled = true;
-      quadrantSelect.disabled = false;
-      remainingMs = 0;
-      showingImage = true;
-      if (resetIndex) {
-        currentIndex = QUADRANTS[quadrantSelect.value].files.length;
-        updateStatus(quadrantSelect.value);
-      }
-      logEvent("stop");
+      startBtn.disabled = true;
+      practiceBtn.disabled = false;
+      sessionBtn.disabled = false;
+      logEvent("block_finalize");
+      updatePresentationMode();
     }
 
     function resetPlayback() {
-      clearTimeout(timerId);
+      clearTimers();
+      closeRatingModal();
       isPlaying = false;
       currentIndex = 0;
       remainingMs = 0;
-      notificationPlayed = false;
-      hasStarted = false;
+      currentBlock = null;
       viewer.classList.remove("paused");
-      closeRatingModal();
-      startBtn.disabled = false;
-      pauseBtn.disabled = true;
-      quadrantSelect.disabled = false;
       activeSlide.classList.remove("active");
       idleSlide.classList.remove("active");
       fixation.classList.add("active");
       statusFile.textContent = "-";
-      statusProgress.textContent = `1 / ${QUADRANTS[quadrantSelect.value].files.length}`;
+      statusProgress.textContent = "0 / 10";
+      statusBlock.textContent = "-";
+      statusQuadrant.textContent = "-";
+      startBtn.disabled = true;
+      pauseBtn.disabled = true;
+      sessionBtn.disabled = false;
+      practiceBtn.disabled = false;
       logEvent("reset");
+      updatePresentationMode();
     }
 
-    startBtn.addEventListener("click", () => {
-      if (modalOpen) return;
-      if (isPlaying) return;
-      const maxIndex = QUADRANTS[quadrantSelect.value].files.length;
-      if (hasStarted && currentIndex < maxIndex) {
-        resumePlayback();
-      } else {
-        openRatingModal("pre");
+    function startPracticeFlow() {
+      if (isPlaying || modalOpen) return;
+      currentSessionDatetime = formatDateTime(new Date());
+      currentBlock = generatePracticeBlock();
+      assignmentRows.push({
+        participant_id: getParticipantId(),
+        block_index: currentBlock.block_index,
+        quadrant: currentBlock.quadrant,
+        true_condition: currentBlock.true_condition,
+        ui_label: currentBlock.ui_label,
+        notif_trial: currentBlock.notif_trial,
+        notif_onset_ms_from_trial_start: currentBlock.notif_onset_ms_from_trial_start,
+        random_seed: currentBlock.random_seed,
+        sampled_image_ids: currentBlock.sampled_image_ids.join("|"),
+        jitter_ms: currentBlock.jitter_ms,
+        is_practice: true
+      });
+      updateStatus();
+      openRatingModal("pre");
+      logEvent("practice_ready");
+    }
+
+    function startNextSessionBlock() {
+      if (isPlaying || modalOpen) return;
+      if (sessionBlocks.length === 0 || sessionPointer >= sessionBlocks.length) {
+        const usedAllocation = generateBlocksFromAllocation(loadedAllocationRows);
+        if (!usedAllocation) generateSessionBlocks();
+        const selectedStart = Math.max(0, quadrantSelect.selectedIndex);
+        sessionPointer = Math.min(selectedStart, Math.max(0, sessionBlocks.length - 1));
       }
-    });
+      if (sessionPointer >= sessionBlocks.length) {
+        logEvent("session_complete");
+        return;
+      }
+      currentSessionDatetime = formatDateTime(new Date());
+      currentBlock = sessionBlocks[sessionPointer];
+      sessionPointer += 1;
+      updateStatus();
+      openRatingModal("pre");
+      logEvent("block_ready", { detail: `block=${currentBlock.block_index}` });
+    }
 
-    pauseBtn.addEventListener("click", pausePlayback);
-    resetBtn.addEventListener("click", resetPlayback);
+    function handleRatingModalDone() {
+      if (!ratingSavedForCurrentPause) return;
+      const purpose = modalPurpose;
+      closeRatingModal();
+      if (purpose === "pre") {
+        startPlayback();
+        return;
+      }
+      if (purpose === "notification") {
+        resumePlayback();
+        return;
+      }
+      if (purpose === "post") {
+        finalizeBlock();
+      }
+    }
 
-    quadrantSelect.addEventListener("change", () => {
-      resetPlayback();
-      updateStatus(quadrantSelect.value);
-      logEvent("quadrant_change");
-    });
+    function parseAllocationJson(text) {
+      try {
+        const parsed = JSON.parse(text);
+        if (!Array.isArray(parsed)) return [];
+        return parsed;
+      } catch (err) {
+        logEvent("allocation_parse_failed", { detail: String(err) });
+        return [];
+      }
+    }
 
     toggleInfoBtn.addEventListener("click", () => {
       infoPanel.classList.toggle("collapsed");
       toggleInfoBtn.textContent = infoPanel.classList.contains("collapsed") ? "開く" : "閉じる";
-      logEvent("info_toggle", infoPanel.classList.contains("collapsed") ? "collapsed" : "expanded");
+      logEvent("info_toggle", { detail: infoPanel.classList.contains("collapsed") ? "collapsed" : "expanded" });
     });
+
+    allocationFileInput.addEventListener("change", async () => {
+      const file = allocationFileInput.files && allocationFileInput.files[0];
+      if (!file) return;
+      loadedAllocationRows = parseAllocationJson(await file.text());
+      logEvent("allocation_loaded", { detail: `rows=${loadedAllocationRows.length}` });
+    });
+
+    practiceBtn.addEventListener("click", startPracticeFlow);
+    sessionBtn.addEventListener("click", startNextSessionBlock);
+    startBtn.addEventListener("click", resumePlayback);
+    pauseBtn.addEventListener("click", () => pausePlayback("manual"));
+    resetBtn.addEventListener("click", resetPlayback);
 
     downloadLogBtn.addEventListener("click", () => {
       logEvent("download_log");
       downloadLogCsv();
       requestAffectiveCsvExport();
+    });
+
+    downloadAllocBtn.addEventListener("click", () => {
+      logEvent("download_assignment");
+      downloadAssignmentCsv();
     });
 
     clearLogBtn.addEventListener("click", () => {
@@ -855,22 +1172,7 @@
       logEvent("log_cleared");
     });
 
-    ratingDoneBtn.addEventListener("click", () => {
-      if (!ratingSavedForCurrentPause) return;
-      const currentPurpose = modalPurpose;
-      closeRatingModal();
-      if (currentPurpose === "pre") {
-        startPlayback();
-        return;
-      }
-      if (currentPurpose === "post") {
-        stopPlayback(false);
-        return;
-      }
-      if (!isPlaying && hasStarted) {
-        resumePlayback();
-      }
-    });
+    ratingDoneBtn.addEventListener("click", handleRatingModalDone);
 
     ratingFrame.addEventListener("load", () => {
       logEvent("rating_frame_loaded");
@@ -881,18 +1183,19 @@
       if (!event.data || !event.data.type) return;
 
       if (event.data.type === "affective-slider-saved") {
-        if (!modalOpen) return;
         ratingSavedForCurrentPause = true;
         ratingDoneBtn.disabled = false;
-        logEvent("rating_saved");
+        ratingPayloadLatest = event.data.payload || null;
+        logEvent("rating_saved", {
+          slider_response: ratingPayloadLatest ? JSON.stringify(ratingPayloadLatest.response || {}) : "",
+          slider_rt_ms: ratingPayloadLatest ? ratingPayloadLatest.slider_rt_ms || "" : ""
+        });
         return;
       }
-
       if (event.data.type === "affective-slider-exported") {
         logEvent("affective_exported");
         return;
       }
-
       if (event.data.type === "affective-slider-export-empty") {
         logEvent("affective_export_empty");
       }
@@ -900,7 +1203,10 @@
 
     fixation.classList.add("active");
     loadRatingFrame();
-    updateStatus(quadrantSelect.value);
+    updateStatus();
+    startBtn.disabled = true;
+    pauseBtn.disabled = true;
+    updatePresentationMode();
   </script>
 </body>
 </html>
