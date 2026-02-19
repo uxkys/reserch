@@ -415,12 +415,25 @@
 
   <script>
     const basePath = "../oasis_top80/";
+    const practiceBasePath = "../oasis_test_img/";
     const NOTIFY_AUDIO = "pc980_startup_like_0_5s.mp3";
     const RATING_PAGE_URL = "../affective_slider_exp/affective_slider_oasis_exp.html";
     const RATING_PAGE_VERSION = "20260213-2";
     const NOTIF_BASE_MS = 2500;
     const NOTIF_JITTER_RANGE_MS = 500;
     const UI_LABELS = ["Condition A", "Condition B"];
+    const PRACTICE_IMAGE_POOL = [
+      "Alcohol 1.jpg",
+      "Bed 1.jpg",
+      "Camping 6.jpg",
+      "Clean 1.jpg",
+      "Crow 2.jpg",
+      "Doctor 1.jpg",
+      "Fence 1.jpg",
+      "Fire 7.jpg",
+      "Frustrated pose 3.jpg",
+      "Keyboard 1.jpg"
+    ];
 
     const QUADRANT_POOLS = {
       HVHA: ["Q1_I134_Cat_5.jpg","Q1_I256_Dog_6.jpg","Q1_I262_Dog_12.jpg","Q1_I268_Dog_18.jpg","Q1_I32_Baby_1.jpg","Q1_I334_Fireworks_1.jpg","Q1_I335_Fireworks_2.jpg","Q1_I336_Fireworks_3.jpg","Q1_I339_Fireworks_6.jpg","Q1_I463_Lake_9.jpg","Q1_I466_Lake_12.jpg","Q1_I468_Lake_14.jpg","Q1_I469_Lake_15.jpg","Q1_I516_Nature_1.jpg","Q1_I531_Nude_couple_5.jpg","Q1_I59_Beach_1.jpg","Q1_I60_Beach_2.jpg","Q1_I616_Penguins_2.jpg","Q1_I660_Rainbow_1.jpg","Q1_I661_Rainbow_2.jpg"],
@@ -728,8 +741,7 @@
       const cfg = getConfig();
       seedValue = getSeed();
       const rng = createRng((seedValue + 9871) >>> 0);
-      const allImages = Object.values(QUADRANT_POOLS).flat();
-      const sampled = shuffledCopy(allImages, rng).slice(0, 10);
+      const sampled = shuffledCopy(PRACTICE_IMAGE_POOL, rng).slice(0, 10);
       const jitterMs = selectJitterMs(rng);
       const notifTrial = randInt(rng, 4, 8);
       const onsetInTrial = NOTIF_BASE_MS + jitterMs;
@@ -745,7 +757,8 @@
         notif_onset_ms_from_trial_start: onsetInTrial,
         notif_onset_ms_from_block_start: computeNotifOnsetMsFromBlockStart(notifTrial, onsetInTrial, cfg),
         random_seed: seedValue,
-        sample_note: `practice_participant=${participantId}`
+        sample_note: `practice_custom_pool=${PRACTICE_IMAGE_POOL.length};participant=${participantId}`,
+        image_base_path: practiceBasePath
       };
       return block;
     }
@@ -930,7 +943,8 @@
       const file = files[index];
       fixation.classList.remove("active");
       idleSlide.classList.remove("active");
-      idleSlide.style.backgroundImage = `url(${basePath}${file})`;
+      const blockBasePath = currentBlock.image_base_path || basePath;
+      idleSlide.style.backgroundImage = `url(${blockBasePath}${encodeURI(file)})`;
       setKenBurns(idleSlide);
       idleSlide.style.animation = "none";
       void idleSlide.offsetHeight;
