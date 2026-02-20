@@ -651,12 +651,16 @@
       QUADRANT_KEYS.forEach((quadrant) => {
         const pool = QUADRANT_POOLS[quadrant];
         const splitSeed = hashStringToSeed(`${participantSeed}:${quadrant}:split`);
-        const rng = createRng(splitSeed);
-        const shuffled = shuffledCopy(pool, rng);
+        const splitRng = createRng(splitSeed);
+        const shuffled = shuffledCopy(pool, splitRng);
+        const assignSeed = hashStringToSeed(`${participantSeed}:${quadrant}:assign`);
+        const assignRng = createRng(assignSeed);
+        const firstHalfIsPush = assignRng() < 0.5;
         sets[quadrant] = {
-          Push: shuffled.slice(0, 10),
-          Poke: shuffled.slice(10, 20),
-          split_seed: splitSeed
+          Push: firstHalfIsPush ? shuffled.slice(0, 10) : shuffled.slice(10, 20),
+          Poke: firstHalfIsPush ? shuffled.slice(10, 20) : shuffled.slice(0, 10),
+          split_seed: splitSeed,
+          split_assignment: firstHalfIsPush ? "first_half=Push" : "first_half=Poke"
         };
       });
       return sets;
@@ -701,8 +705,11 @@
 
       for (let i = 0; i < basePattern.length; i += 1) {
         const row = basePattern[i];
-        const sampled = quadrantSplitSets[row.q][row.c].slice();
-        const note = `quadrant_split_once:${row.c}:seed=${quadrantSplitSets[row.q].split_seed}`;
+        const blockOrderSeed = hashStringToSeed(`${seedValue}:${row.q}:${row.c}:block`);
+        const blockOrderRng = createRng(blockOrderSeed);
+        const sampled = shuffledCopy(quadrantSplitSets[row.q][row.c], blockOrderRng);
+        const splitAssignment = quadrantSplitSets[row.q].split_assignment;
+        const note = `quadrant_split_once:${row.c}:seed=${quadrantSplitSets[row.q].split_seed}:${splitAssignment}:block_order_seed=${blockOrderSeed}`;
         const jitterMs = selectJitterMs(row.c, rng);
         const notifTrial = selectNotifTrial(row.c, rng);
         const onsetInTrial = NOTIF_BASE_MS + jitterMs;
@@ -719,7 +726,8 @@
           notif_onset_ms_from_trial_start: onsetInTrial,
           notif_onset_ms_from_block_start: onsetBlock,
           random_seed: seedValue,
-          sample_note: note
+          sample_note: note,
+          split_assignment: splitAssignment
         };
         sessionBlocks.push(block);
         assignmentRows.push({
@@ -733,7 +741,8 @@
           random_seed: block.random_seed,
           sampled_image_ids: block.sampled_image_ids.join("|"),
           jitter_ms: block.jitter_ms,
-          is_practice: false
+          is_practice: false,
+          split_assignment: block.split_assignment
         });
       }
       sessionPointer = 0;
@@ -794,7 +803,7 @@
         "participant_id","session_datetime","DateTime","Elapsed","event","detail","block_index","is_practice",
         "quadrant","true_condition","condition","ui_label","trial_index","trial_index_in_block","file","image_id","notif_trial","notif_trial_index","jitter_ms",
         "notif_onset_ms_from_trial_start","notif_onset_ms_from_block_start","slider_response","slider_rt_ms",
-        "sampled_image_ids","random_seed","sample_note"
+        "sampled_image_ids","random_seed","sample_note","split_assignment"
       ];
       const stamp = formatCompact(new Date());
       const name = `oasis_log_${getParticipantId()}_${stamp}.csv`;
@@ -804,7 +813,7 @@
     function downloadAssignmentCsv() {
       const header = [
         "participant_id","block_index","quadrant","true_condition","ui_label","notif_trial",
-        "notif_onset_ms_from_trial_start","random_seed","sampled_image_ids","jitter_ms","is_practice"
+        "notif_onset_ms_from_trial_start","random_seed","sampled_image_ids","jitter_ms","is_practice","split_assignment"
       ];
       const stamp = formatCompact(new Date());
       const name = `assignment_${getParticipantId()}_${stamp}.csv`;
@@ -882,7 +891,8 @@
         slider_rt_ms: extra.slider_rt_ms ?? (ratingPayloadLatest?.slider_rt_ms ?? ""),
         sampled_image_ids: extra.sampled_image_ids ?? (currentBlock ? currentBlock.sampled_image_ids.join("|") : ""),
         random_seed: currentBlock ? currentBlock.random_seed : (seedValue ?? ""),
-        sample_note: currentBlock ? currentBlock.sample_note : ""
+        sample_note: currentBlock ? currentBlock.sample_note : "",
+        split_assignment: currentBlock ? (currentBlock.split_assignment || "") : ""
       };
       logRows.push(row);
     }
