@@ -58,28 +58,6 @@
       box-shadow: 0 10px 24px rgba(22, 28, 45, 0.08);
     }
 
-    .info-panel h1 {
-      margin-bottom: 4px;
-    }
-
-    .info-panel .lead {
-      margin: 0;
-    }
-
-    .info-panel .info-header {
-      justify-content: space-between;
-      align-items: flex-start;
-    }
-
-    .info-panel.collapsed .lead {
-      display: none;
-    }
-
-    .info-panel.collapsed h1 {
-      font-size: 1.05rem;
-      margin: 0;
-    }
-
     .controls {
       display: grid;
       grid-template-columns: 1fr;
@@ -88,7 +66,16 @@
 
     .controls-header {
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .controls-title h1 {
+      margin-bottom: 4px;
+    }
+
+    .controls-title .lead {
+      margin: 0;
     }
 
     .controls-body {
@@ -98,6 +85,19 @@
 
     .controls.collapsed .controls-body {
       display: none;
+    }
+
+    .controls.collapsed .controls-title .lead {
+      display: none;
+    }
+
+    .controls.collapsed {
+      padding: 10px 12px;
+    }
+
+    .controls.collapsed .controls-title h1 {
+      font-size: 1.05rem;
+      margin: 0;
     }
 
     .row {
@@ -232,6 +232,22 @@
       margin-top: 4px;
     }
 
+    .status-panel .controls-header {
+      align-items: center;
+    }
+
+    .status-panel .status-body {
+      display: block;
+    }
+
+    .status-panel.collapsed .status-body {
+      display: none;
+    }
+
+    .status-panel.collapsed {
+      padding: 10px 12px;
+    }
+
     .note {
       font-size: 0.85rem;
       color: var(--muted);
@@ -273,8 +289,8 @@
       display: flex;
     }
 
-    body.presentation-mode .info-panel,
-    body.presentation-mode .controls {
+    body.presentation-mode .controls,
+    body.presentation-mode .status-panel {
       display: none;
     }
 
@@ -319,9 +335,9 @@
 </head>
 <body>
   <div class="container">
-    <div class="panel info-panel" id="infoPanel">
-      <div class="row info-header">
-        <div>
+    <div class="panel controls" id="controlsPanel">
+      <div class="row controls-header">
+        <div class="controls-title">
           <h1>OASIS 象限別 Ken Burns ビューア</h1>
           <p class="lead">
             象限ごとに画像を1枚目から10枚目まで、Ken Burns 効果で連続表示します。<br>
@@ -329,13 +345,6 @@
             通知音は各ブロック1回、5〜10枚目のどこかで固定タイミングに鳴ります。
           </p>
         </div>
-        <button class="ghost" id="toggleInfoBtn" type="button">閉じる</button>
-      </div>
-    </div>
-
-    <div class="panel controls" id="controlsPanel">
-      <div class="row controls-header">
-        <strong>実験コントロール</strong>
         <button class="ghost" id="toggleControlsBtn" type="button">閉じる</button>
       </div>
 
@@ -393,22 +402,31 @@
         <div class="slide" id="slideB"></div>
         <div class="fixation" id="fixation">+</div>
       </div>
-      <div class="status">
-        <div>
-          Block
-          <strong id="statusBlock">-</strong>
-        </div>
-        <div>
-          象限
-          <strong id="statusQuadrant">HVHA</strong>
-        </div>
-        <div>
-          進行
-          <strong id="statusProgress">0 / 10</strong>
-        </div>
-        <div>
-          ファイル
-          <strong id="statusFile">-</strong>
+    </div>
+
+    <div class="panel status-panel" id="statusPanel">
+      <div class="row controls-header">
+        <strong>進行状況</strong>
+        <button class="ghost" id="toggleStatusBtn" type="button">閉じる</button>
+      </div>
+      <div class="status-body">
+        <div class="status">
+          <div>
+            Block
+            <strong id="statusBlock">-</strong>
+          </div>
+          <div>
+            象限
+            <strong id="statusQuadrant">HVHA</strong>
+          </div>
+          <div>
+            進行
+            <strong id="statusProgress">0 / 10</strong>
+          </div>
+          <div>
+            ファイル
+            <strong id="statusFile">-</strong>
+          </div>
         </div>
       </div>
     </div>
@@ -472,10 +490,10 @@
     const slideA = document.getElementById("slideA");
     const slideB = document.getElementById("slideB");
     const viewer = document.getElementById("viewer");
-    const infoPanel = document.getElementById("infoPanel");
-    const toggleInfoBtn = document.getElementById("toggleInfoBtn");
     const controlsPanel = document.getElementById("controlsPanel");
     const toggleControlsBtn = document.getElementById("toggleControlsBtn");
+    const statusPanel = document.getElementById("statusPanel");
+    const toggleStatusBtn = document.getElementById("toggleStatusBtn");
     const quadrantSelect = document.getElementById("quadrant");
     const participantIdInput = document.getElementById("participantIdInput");
     const seedInput = document.getElementById("seedInput");
@@ -646,7 +664,9 @@
       return randInt(rng, 4, 8);
     }
 
-    function selectJitterMs(rng) {
+    function selectJitterMs(trueCondition, rng) {
+      if (trueCondition === "Push") return 0;
+      if (trueCondition === "Poke") return randInt(rng, -NOTIF_JITTER_RANGE_MS, NOTIF_JITTER_RANGE_MS);
       return randInt(rng, -NOTIF_JITTER_RANGE_MS, NOTIF_JITTER_RANGE_MS);
     }
 
@@ -665,7 +685,7 @@
       for (let i = 0; i < basePattern.length; i += 1) {
         const row = basePattern[i];
         const { sampled, note } = sampleImages(QUADRANT_POOLS[row.q], 10, rng, useNoRepeat, row.q);
-        const jitterMs = selectJitterMs(rng);
+        const jitterMs = selectJitterMs(row.c, rng);
         const notifTrial = selectNotifTrial(row.c, rng);
         const onsetInTrial = NOTIF_BASE_MS + jitterMs;
         const onsetBlock = computeNotifOnsetMsFromBlockStart(notifTrial, onsetInTrial, cfg);
@@ -708,7 +728,7 @@
       seedValue = getSeed();
       const rng = createRng((seedValue + 9871) >>> 0);
       const sampled = shuffledCopy(PRACTICE_IMAGE_POOL, rng).slice(0, 10);
-      const jitterMs = selectJitterMs(rng);
+      const jitterMs = selectJitterMs("Practice", rng);
       const notifTrial = randInt(rng, 4, 8);
       const onsetInTrial = NOTIF_BASE_MS + jitterMs;
       const block = {
@@ -1104,16 +1124,16 @@
       }
     }
 
-    toggleInfoBtn.addEventListener("click", () => {
-      infoPanel.classList.toggle("collapsed");
-      toggleInfoBtn.textContent = infoPanel.classList.contains("collapsed") ? "開く" : "閉じる";
-      logEvent("info_toggle", { detail: infoPanel.classList.contains("collapsed") ? "collapsed" : "expanded" });
-    });
-
     toggleControlsBtn.addEventListener("click", () => {
       controlsPanel.classList.toggle("collapsed");
       toggleControlsBtn.textContent = controlsPanel.classList.contains("collapsed") ? "開く" : "閉じる";
       logEvent("controls_toggle", { detail: controlsPanel.classList.contains("collapsed") ? "collapsed" : "expanded" });
+    });
+
+    toggleStatusBtn.addEventListener("click", () => {
+      statusPanel.classList.toggle("collapsed");
+      toggleStatusBtn.textContent = statusPanel.classList.contains("collapsed") ? "開く" : "閉じる";
+      logEvent("status_toggle", { detail: statusPanel.classList.contains("collapsed") ? "collapsed" : "expanded" });
     });
 
     practiceBtn.addEventListener("click", startPracticeFlow);
