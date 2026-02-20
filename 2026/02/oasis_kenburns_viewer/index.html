@@ -345,11 +345,6 @@
       </div>
 
       <div class="row">
-        <label for="allocationFileInput">割付けJSON</label>
-        <input id="allocationFileInput" type="file" accept=".json" />
-      </div>
-
-      <div class="row">
         <button class="primary" id="practiceBtn">練習を実行</button>
         <button class="primary" id="sessionBtn">本試行を開始</button>
         <button class="ghost" id="startBtn">再開</button>
@@ -462,7 +457,6 @@
     const participantIdInput = document.getElementById("participantIdInput");
     const seedInput = document.getElementById("seedInput");
     const excludeUsedToggle = document.getElementById("excludeUsedToggle");
-    const allocationFileInput = document.getElementById("allocationFileInput");
     const practiceBtn = document.getElementById("practiceBtn");
     const sessionBtn = document.getElementById("sessionBtn");
     const startBtn = document.getElementById("startBtn");
@@ -500,7 +494,6 @@
     let modalOpen = false;
     let modalPurpose = null;
     let ratingSavedForCurrentPause = false;
-    let loadedAllocationRows = [];
     let seedValue = null;
     let sessionBlocks = [];
     let sessionPointer = 0;
@@ -684,56 +677,6 @@
       }
       sessionPointer = 0;
       logEvent("session_generated", { detail: `pattern=${patternIdx + 1}`, sampled_image_ids: "" });
-    }
-
-    function generateBlocksFromAllocation(rows) {
-      const participantId = getParticipantId();
-      const cfg = getConfig();
-      const matched = rows.filter((r) => String(r.participant_id) === participantId).sort((a, b) => Number(a.block_index) - Number(b.block_index));
-      if (matched.length === 0) return false;
-      sessionBlocks = matched.map((r, idx) => {
-        const sampled = Array.isArray(r.sampled_image_ids)
-          ? r.sampled_image_ids.slice(0, 10)
-          : String(r.sampled_image_ids || "").split("|").filter(Boolean).slice(0, 10);
-        const notifTrial = Number(r.notif_trial);
-        const jitterMs = Number(r.jitter_ms);
-        const onsetTrial = Number(r.notif_onset_ms_from_trial_start);
-        return {
-          block_index: idx + 1,
-          is_practice: false,
-          quadrant: r.quadrant,
-          true_condition: r.true_condition,
-          ui_label: r.ui_label,
-          sampled_image_ids: sampled,
-          notif_trial: Number.isFinite(notifTrial) ? notifTrial : 2,
-          jitter_ms: Number.isFinite(jitterMs) ? jitterMs : 0,
-          notif_onset_ms_from_trial_start: Number.isFinite(onsetTrial) ? onsetTrial : NOTIF_BASE_MS,
-          notif_onset_ms_from_block_start: computeNotifOnsetMsFromBlockStart(
-            Number.isFinite(notifTrial) ? notifTrial : 2,
-            Number.isFinite(onsetTrial) ? onsetTrial : NOTIF_BASE_MS,
-            cfg
-          ),
-          random_seed: Number(r.random_seed) || getSeed(),
-          sample_note: "from_allocation_table"
-        };
-      });
-      assignmentRows.length = 0;
-      sessionBlocks.forEach((b) => assignmentRows.push({
-        participant_id: participantId,
-        block_index: b.block_index,
-        quadrant: b.quadrant,
-        true_condition: b.true_condition,
-        ui_label: b.ui_label,
-        notif_trial: b.notif_trial,
-        notif_onset_ms_from_trial_start: b.notif_onset_ms_from_trial_start,
-        random_seed: b.random_seed,
-        sampled_image_ids: b.sampled_image_ids.join("|"),
-        jitter_ms: b.jitter_ms,
-        is_practice: false
-      }));
-      sessionPointer = 0;
-      logEvent("session_loaded_from_allocation", { detail: `rows=${sessionBlocks.length}`, sampled_image_ids: "" });
-      return true;
     }
 
     function generatePracticeBlock() {
@@ -1105,8 +1048,7 @@
     function startNextSessionBlock() {
       if (isPlaying || modalOpen) return;
       if (sessionBlocks.length === 0 || sessionPointer >= sessionBlocks.length) {
-        const usedAllocation = generateBlocksFromAllocation(loadedAllocationRows);
-        if (!usedAllocation) generateSessionBlocks();
+        generateSessionBlocks();
         const selectedStart = Math.max(0, quadrantSelect.selectedIndex);
         sessionPointer = Math.min(selectedStart, Math.max(0, sessionBlocks.length - 1));
       }
@@ -1139,28 +1081,10 @@
       }
     }
 
-    function parseAllocationJson(text) {
-      try {
-        const parsed = JSON.parse(text);
-        if (!Array.isArray(parsed)) return [];
-        return parsed;
-      } catch (err) {
-        logEvent("allocation_parse_failed", { detail: String(err) });
-        return [];
-      }
-    }
-
     toggleInfoBtn.addEventListener("click", () => {
       infoPanel.classList.toggle("collapsed");
       toggleInfoBtn.textContent = infoPanel.classList.contains("collapsed") ? "開く" : "閉じる";
       logEvent("info_toggle", { detail: infoPanel.classList.contains("collapsed") ? "collapsed" : "expanded" });
-    });
-
-    allocationFileInput.addEventListener("change", async () => {
-      const file = allocationFileInput.files && allocationFileInput.files[0];
-      if (!file) return;
-      loadedAllocationRows = parseAllocationJson(await file.text());
-      logEvent("allocation_loaded", { detail: `rows=${loadedAllocationRows.length}` });
     });
 
     practiceBtn.addEventListener("click", startPracticeFlow);
