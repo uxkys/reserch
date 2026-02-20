@@ -475,6 +475,7 @@
       LVLA: ["Q3_I129_Cardboard_3.jpg","Q3_I227_Destruction_4.jpg","Q3_I230_Destruction_7.jpg","Q3_I235_Destruction_2.jpg","Q3_I236_Destruction_3.jpg","Q3_I240_Dirt_5.jpg","Q3_I309_Feces_1.jpg","Q3_I310_Feces_2.jpg","Q3_I379_Garbage_dump_1.jpg","Q3_I380_Garbage_dump_2.jpg","Q3_I381_Garbage_dump_3.jpg","Q3_I382_Garbage_dump_4.jpg","Q3_I384_Garbage_dump_6.jpg","Q3_I386_Garbage_dump_8.jpg","Q3_I443_Jail_2.jpg","Q3_I600_Paperclips_1.jpg","Q3_I749_Sidewalk_6.jpg","Q3_I862_Wall_4.jpg","Q3_I863_Wall_5.jpg","Q3_I891_Yarn_1.jpg"],
       HVLA: ["Q4_I182_Cotton_swabs_3.jpg","Q4_I254_Dog_4.jpg","Q4_I349_Flowers_6.jpg","Q4_I36_Baby_5.jpg","Q4_I402_Grass_4.jpg","Q4_I455_Lake_1.jpg","Q4_I456_Lake_2.jpg","Q4_I462_Lake_8.jpg","Q4_I464_Lake_10.jpg","Q4_I467_Lake_13.jpg","Q4_I587_Office_supplies_2.jpg","Q4_I597_Paper_3.jpg","Q4_I602_Paperclips_3.jpg","Q4_I673_Rocks_6.jpg","Q4_I743_Siblings_1.jpg","Q4_I74_Bird_1.jpg","Q4_I859_Wall_1.jpg","Q4_I860_Wall_2.jpg","Q4_I861_Wall_3.jpg","Q4_I95_Bricks_1.jpg"]
     };
+    const QUADRANT_KEYS = ["HVHA", "HVLA", "LVHA", "LVLA"];
 
     const PATTERNS = [
       [{ q: "HVHA", c: "Push" }, { q: "HVLA", c: "Push" }, { q: "LVHA", c: "Push" }, { q: "LVLA", c: "Push" }, { q: "LVHA", c: "Poke" }, { q: "LVLA", c: "Poke" }, { q: "HVHA", c: "Poke" }, { q: "HVLA", c: "Poke" }],
@@ -645,6 +646,22 @@
       return { sampled, note };
     }
 
+    function buildQuadrantSplitSets(participantSeed) {
+      const sets = {};
+      QUADRANT_KEYS.forEach((quadrant) => {
+        const pool = QUADRANT_POOLS[quadrant];
+        const splitSeed = hashStringToSeed(`${participantSeed}:${quadrant}:split`);
+        const rng = createRng(splitSeed);
+        const shuffled = shuffledCopy(pool, rng);
+        sets[quadrant] = {
+          Push: shuffled.slice(0, 10),
+          Poke: shuffled.slice(10, 20),
+          split_seed: splitSeed
+        };
+      });
+      return sets;
+    }
+
     function buildUiConditionMap(rng) {
       const flip = rng() < 0.5;
       return flip
@@ -675,16 +692,17 @@
       const cfg = getConfig();
       seedValue = getSeed();
       const rng = createRng(seedValue);
+      const quadrantSplitSets = buildQuadrantSplitSets(seedValue);
       const uiMap = buildUiConditionMap(rng);
       const patternIdx = resolvePatternIndex(participantId);
       const basePattern = PATTERNS[patternIdx];
       sessionBlocks = [];
       assignmentRows.length = 0;
-      const useNoRepeat = excludeUsedToggle.checked;
 
       for (let i = 0; i < basePattern.length; i += 1) {
         const row = basePattern[i];
-        const { sampled, note } = sampleImages(QUADRANT_POOLS[row.q], 10, rng, useNoRepeat, row.q);
+        const sampled = quadrantSplitSets[row.q][row.c].slice();
+        const note = `quadrant_split_once:${row.c}:seed=${quadrantSplitSets[row.q].split_seed}`;
         const jitterMs = selectJitterMs(row.c, rng);
         const notifTrial = selectNotifTrial(row.c, rng);
         const onsetInTrial = NOTIF_BASE_MS + jitterMs;
@@ -774,7 +792,7 @@
     function downloadLogCsv() {
       const header = [
         "participant_id","session_datetime","DateTime","Elapsed","event","detail","block_index","is_practice",
-        "quadrant","true_condition","ui_label","trial_index","file","notif_trial","jitter_ms",
+        "quadrant","true_condition","condition","ui_label","trial_index","trial_index_in_block","file","image_id","notif_trial","notif_trial_index","jitter_ms",
         "notif_onset_ms_from_trial_start","notif_onset_ms_from_block_start","slider_response","slider_rt_ms",
         "sampled_image_ids","random_seed","sample_note"
       ];
@@ -849,10 +867,14 @@
         is_practice: currentBlock ? String(currentBlock.is_practice) : "",
         quadrant: currentBlock ? currentBlock.quadrant : "",
         true_condition: currentBlock ? currentBlock.true_condition : "",
+        condition: currentBlock ? currentBlock.true_condition : "",
         ui_label: currentBlock ? currentBlock.ui_label : "",
         trial_index: trialIndex,
+        trial_index_in_block: trialIndex,
         file,
+        image_id: file,
         notif_trial: currentBlock ? currentBlock.notif_trial : "",
+        notif_trial_index: currentBlock ? currentBlock.notif_trial : "",
         jitter_ms: currentBlock ? currentBlock.jitter_ms : "",
         notif_onset_ms_from_trial_start: currentBlock ? currentBlock.notif_onset_ms_from_trial_start : "",
         notif_onset_ms_from_block_start: currentBlock ? currentBlock.notif_onset_ms_from_block_start : "",
