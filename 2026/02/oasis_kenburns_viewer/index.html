@@ -86,6 +86,20 @@
       gap: 12px;
     }
 
+    .controls-header {
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .controls-body {
+      display: grid;
+      gap: 12px;
+    }
+
+    .controls.collapsed .controls-body {
+      display: none;
+    }
+
     .row {
       display: flex;
       flex-wrap: wrap;
@@ -319,7 +333,13 @@
       </div>
     </div>
 
-    <div class="panel controls">
+    <div class="panel controls" id="controlsPanel">
+      <div class="row controls-header">
+        <strong>実験コントロール</strong>
+        <button class="ghost" id="toggleControlsBtn" type="button">閉じる</button>
+      </div>
+
+      <div class="controls-body">
       <div class="row">
         <label for="quadrant">ブロック選択</label>
         <select id="quadrant">
@@ -364,6 +384,7 @@
         <input id="isiInput" type="number" min="0" step="50" value="750" />
       </div>
       <p class="note">※ 数値変更は次の画像から反映されます。</p>
+      </div>
     </div>
 
     <div class="panel">
@@ -453,6 +474,8 @@
     const viewer = document.getElementById("viewer");
     const infoPanel = document.getElementById("infoPanel");
     const toggleInfoBtn = document.getElementById("toggleInfoBtn");
+    const controlsPanel = document.getElementById("controlsPanel");
+    const toggleControlsBtn = document.getElementById("toggleControlsBtn");
     const quadrantSelect = document.getElementById("quadrant");
     const participantIdInput = document.getElementById("participantIdInput");
     const seedInput = document.getElementById("seedInput");
@@ -1085,6 +1108,12 @@
       infoPanel.classList.toggle("collapsed");
       toggleInfoBtn.textContent = infoPanel.classList.contains("collapsed") ? "開く" : "閉じる";
       logEvent("info_toggle", { detail: infoPanel.classList.contains("collapsed") ? "collapsed" : "expanded" });
+    });
+
+    toggleControlsBtn.addEventListener("click", () => {
+      controlsPanel.classList.toggle("collapsed");
+      toggleControlsBtn.textContent = controlsPanel.classList.contains("collapsed") ? "開く" : "閉じる";
+      logEvent("controls_toggle", { detail: controlsPanel.classList.contains("collapsed") ? "collapsed" : "expanded" });
     });
 
     practiceBtn.addEventListener("click", startPracticeFlow);
