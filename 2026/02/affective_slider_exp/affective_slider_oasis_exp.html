@@ -459,18 +459,21 @@ function updateLogDisplay() {
   });
 }
 
-stressSlider.addEventListener('input', (e) => {
-  showThumbFor(e.currentTarget);
-  markTouched('stress');
-});
-arousalSlider.addEventListener('input', (e) => {
-  showThumbFor(e.currentTarget);
-  markTouched('arousal');
-});
-pleasureSlider.addEventListener('input', (e) => {
-  showThumbFor(e.currentTarget);
-  markTouched('pleasure');
-});
+function bindSliderInteraction(slider, key) {
+  const activate = () => {
+    showThumbFor(slider);
+    markTouched(key);
+  };
+  // Clicking near the current value may not fire `input` if the value does not change.
+  // Treat pointer interaction itself as "touched" so users are not blocked.
+  slider.addEventListener('pointerdown', activate);
+  slider.addEventListener('click', activate);
+  slider.addEventListener('input', activate);
+}
+
+bindSliderInteraction(stressSlider, 'stress');
+bindSliderInteraction(arousalSlider, 'arousal');
+bindSliderInteraction(pleasureSlider, 'pleasure');
 
 // 操作ログの表示/非表示を切り替える
 toggleLogButton.onclick = function() {
