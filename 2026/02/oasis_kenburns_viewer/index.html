@@ -356,8 +356,7 @@
           <h1>OASIS 象限別 Ken Burns ビューア</h1>
           <p class="lead">
             象限ごとに画像を1枚目から10枚目まで、Ken Burns 効果で連続表示します。<br>
-            1枚あたり5秒、切替クロスフェード0.5秒＋注視点0.75秒（変更可）。<br>
-            通知音は各ブロック1回、5〜10枚目のどこかで固定タイミングに鳴ります。
+            1枚あたり5秒、切替クロスフェード0.5秒＋注視点0.75秒（変更可）。
           </p>
           <p class="helper-link">
             実験協力者情報入力フォーム:
@@ -397,6 +396,7 @@
         <button class="primary" id="sessionBtn">本試行を開始</button>
         <button class="ghost" id="startBtn">再開</button>
         <button class="ghost" id="pauseBtn" disabled>一時停止</button>
+        <button class="ghost" id="testSoundBtn">音量テスト</button>
         <button class="danger" id="resetBtn">リセット</button>
         <button class="ghost" id="downloadLogBtn">ログCSV</button>
         <button class="ghost" id="downloadAllocBtn">割付けCSV</button>
@@ -469,7 +469,7 @@
   <script>
     const basePath = "../oasis_top80/";
     const practiceBasePath = "../oasis_test_img/";
-    const NOTIFY_AUDIO = "pc980_startup_like_0_5s.mp3";
+    const NOTIFY_AUDIO = "pc980_startup_like_0_25s.m4a";
     const RATING_PAGE_URL = "../affective_slider_exp/affective_slider_oasis_exp.html";
     const RATING_PAGE_VERSION = "20260213-2";
     const NOTIF_BASE_MS = 2500;
@@ -522,6 +522,7 @@
     const sessionBtn = document.getElementById("sessionBtn");
     const startBtn = document.getElementById("startBtn");
     const pauseBtn = document.getElementById("pauseBtn");
+    const testSoundBtn = document.getElementById("testSoundBtn");
     const resetBtn = document.getElementById("resetBtn");
     const downloadLogBtn = document.getElementById("downloadLogBtn");
     const downloadAllocBtn = document.getElementById("downloadAllocBtn");
@@ -1191,6 +1192,15 @@
     sessionBtn.addEventListener("click", startNextSessionBlock);
     startBtn.addEventListener("click", resumePlayback);
     pauseBtn.addEventListener("click", () => pausePlayback("manual"));
+    testSoundBtn.addEventListener("click", async () => {
+      try {
+        audio.currentTime = 0;
+        await audio.play();
+        logEvent("test_sound");
+      } catch (err) {
+        logEvent("test_sound_failed", { detail: String(err) });
+      }
+    });
     resetBtn.addEventListener("click", resetPlayback);
 
     downloadLogBtn.addEventListener("click", () => {
