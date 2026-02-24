@@ -37,6 +37,17 @@
       gap: 16px;
     }
 
+    body.presentation-mode {
+      align-items: center;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    body.presentation-mode .container {
+      min-height: 100vh;
+      align-content: center;
+    }
+
     h1 {
       font-size: 1.4rem;
       margin: 0 0 4px 0;
@@ -857,7 +868,7 @@
     }
 
     function updatePresentationMode() {
-      const hideControls = isPlaying && !modalOpen;
+      const hideControls = Boolean(currentBlock) && (isPlaying || modalOpen);
       document.body.classList.toggle("presentation-mode", hideControls);
     }
 
@@ -964,14 +975,24 @@
       if (!currentBlock || !isPlaying || !showingImage || currentBlock.notificationFired) return;
       currentBlock.notificationFired = true;
       logEvent("notification_onset");
-      pausePlayback("notification");
-      openRatingModal("notification");
+      let played = false;
       try {
         audio.currentTime = 0;
         await audio.play();
+        played = true;
       } catch (err) {
         logEvent("notification_audio_failed", { detail: String(err) });
       }
+      // Show the questionnaire immediately after notification playback starts.
+      if (played) {
+        setTimeout(() => {
+          pausePlayback("notification");
+          openRatingModal("notification");
+        }, 40);
+        return;
+      }
+      pausePlayback("notification");
+      openRatingModal("notification");
     }
 
     function showImage(index) {
