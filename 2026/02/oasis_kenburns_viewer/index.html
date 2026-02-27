@@ -157,6 +157,12 @@
       color: #fff;
     }
 
+    .practice {
+      background: linear-gradient(135deg, #14a76c, #39c487);
+      border: none;
+      color: #fff;
+    }
+
     .ghost {
       background: transparent;
       border: 1px solid var(--border);
@@ -354,6 +360,62 @@
       background: #fafbfe;
     }
 
+    .memory-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(16, 20, 30, 0.56);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+      padding: 16px;
+    }
+
+    .memory-overlay.open {
+      display: flex;
+    }
+
+    .memory-card {
+      width: min(900px, 96vw);
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+      overflow: hidden;
+    }
+
+    .memory-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .memory-body {
+      padding: 14px 16px 10px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .memory-preview {
+      width: 100%;
+      height: min(52vh, 460px);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      object-fit: contain;
+      background: #f4f6fb;
+    }
+
+    .memory-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      padding: 0 16px 16px;
+    }
+
     @media (max-width: 720px) {
       .viewer { height: 52vh; }
     }
@@ -403,14 +465,13 @@
       </div>
 
       <div class="row">
-        <button class="primary" id="practiceBtn">練習を実行</button>
+        <button class="practice" id="practiceBtn">練習を実行</button>
         <button class="primary" id="sessionBtn">本試行を開始</button>
         <button class="ghost" id="startBtn">再開</button>
         <button class="ghost" id="pauseBtn" disabled>一時停止</button>
         <button class="ghost" id="testSoundBtn">音量テスト</button>
         <button class="danger" id="resetBtn">リセット</button>
-        <button class="ghost" id="downloadLogBtn">ログCSV</button>
-        <button class="ghost" id="downloadAllocBtn">割付けCSV</button>
+        <button class="ghost" id="downloadLogBtn">ログCSV一括</button>
         <button class="ghost" id="clearLogBtn">ログ消去</button>
       </div>
 
@@ -477,14 +538,34 @@
     </div>
   </div>
 
+  <div class="memory-overlay" id="memoryModal" aria-hidden="true">
+    <div class="memory-card" role="dialog" aria-modal="true" aria-labelledby="memoryTitle">
+      <div class="memory-header">
+        <div id="memoryTitle">記憶テスト（Old/New）</div>
+        <div id="memoryProgress">1 / 20</div>
+      </div>
+      <div class="memory-body">
+        <img id="memoryImage" class="memory-preview" alt="Memory test stimulus" src="" />
+      </div>
+      <div class="memory-actions">
+        <button class="ghost" id="memoryNewBtn" type="button" aria-label="見てない">← 見てない</button>
+        <button class="ghost" id="memoryUndoBtn" type="button">1つ戻る</button>
+        <button class="primary" id="memoryOldBtn" type="button" aria-label="見た">見た →</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const basePath = "../oasis_top80/";
     const practiceBasePath = "../oasis_test_img/";
+    const memoryLureBasePath = "../oasis_top80_auto_rule_randomized/";
     const NOTIFY_AUDIO = "pc980_startup_like_0_25s.m4a";
     const RATING_PAGE_URL = "../affective_slider_exp/affective_slider_oasis_exp.html";
     const RATING_PAGE_VERSION = "20260213-2";
     const NOTIF_BASE_MS = 2500;
     const NOTIF_JITTER_RANGE_MS = 500;
+    const MEMORY_OLD_COUNT = 5;
+    const MEMORY_NEW_COUNT = 5;
     const UI_LABELS = ["Condition A", "Condition B"];
     const PRACTICE_IMAGE_POOL = [
       "Alcohol 1.jpg",
@@ -504,6 +585,12 @@
       LVHA: ["Q2_I118_Car_accident_3.jpg","Q2_I150_Cemetery_5.jpg","Q2_I229_Destruction_6.jpg","Q2_I231_Destruction_8.jpg","Q2_I284_Dog_attack_3.jpg","Q2_I303_Explosion_2.jpg","Q2_I304_Explosion_3.jpg","Q2_I306_Explosion_5.jpg","Q2_I319_Fire_2.jpg","Q2_I328_Fire_11.jpg","Q2_I343_Flood_3.jpg","Q2_I451_KKK_rally_1.jpg","Q2_I638_Plane_crash_3.jpg","Q2_I644_Police_5.jpg","Q2_I696_Sad_face_9.jpg","Q2_I788_Soldiers_7.jpg","Q2_I848_Tornado_1.jpg","Q2_I857_Volcano_2.jpg","Q2_I865_War_2.jpg","Q2_I871_War_8.jpg"],
       LVLA: ["Q3_I129_Cardboard_3.jpg","Q3_I227_Destruction_4.jpg","Q3_I230_Destruction_7.jpg","Q3_I235_Destruction_2.jpg","Q3_I236_Destruction_3.jpg","Q3_I240_Dirt_5.jpg","Q3_I309_Feces_1.jpg","Q3_I310_Feces_2.jpg","Q3_I379_Garbage_dump_1.jpg","Q3_I380_Garbage_dump_2.jpg","Q3_I381_Garbage_dump_3.jpg","Q3_I382_Garbage_dump_4.jpg","Q3_I384_Garbage_dump_6.jpg","Q3_I386_Garbage_dump_8.jpg","Q3_I443_Jail_2.jpg","Q3_I600_Paperclips_1.jpg","Q3_I749_Sidewalk_6.jpg","Q3_I862_Wall_4.jpg","Q3_I863_Wall_5.jpg","Q3_I891_Yarn_1.jpg"],
       HVLA: ["Q4_I182_Cotton_swabs_3.jpg","Q4_I254_Dog_4.jpg","Q4_I349_Flowers_6.jpg","Q4_I36_Baby_5.jpg","Q4_I402_Grass_4.jpg","Q4_I455_Lake_1.jpg","Q4_I456_Lake_2.jpg","Q4_I462_Lake_8.jpg","Q4_I464_Lake_10.jpg","Q4_I467_Lake_13.jpg","Q4_I587_Office_supplies_2.jpg","Q4_I597_Paper_3.jpg","Q4_I602_Paperclips_3.jpg","Q4_I673_Rocks_6.jpg","Q4_I743_Siblings_1.jpg","Q4_I74_Bird_1.jpg","Q4_I859_Wall_1.jpg","Q4_I860_Wall_2.jpg","Q4_I861_Wall_3.jpg","Q4_I95_Bricks_1.jpg"]
+    };
+    const MEMORY_LURE_POOLS = {
+      HVHA: ["01_Research 1.jpg","02_Scared cat 1.jpg","03_Smiling face 1.jpg","04_Galaxy 7.jpg","05_Baby 4.jpg","06_Waterfall 1.jpg","07_Hang gliding 1.jpg","08_Sailing 1.jpg","09_Traffic 1.jpg","10_Cold 6.jpg","11_Rollercoaster 1.jpg","12_Rafting 3.jpg","13_Astronaut 1.jpg","14_Rafting 4.jpg","15_Rollercoaster 3.jpg","16_Thunderstorm 6.jpg","17_Galaxy 8.jpg","18_Cliff diver 2.jpg","19_Wedding 5.jpg","20_Dog 20.jpg"],
+      HVLA: ["01_Gazing 7.jpg","02_Heart 3.jpg","03_Camping 1.jpg","04_Excited face 7.jpg","05_Drink 2.jpg","06_School 1.jpg","07_Cold 5.jpg","08_Satellite 1.jpg","09_School 8.jpg","10_Drink 1.jpg","11_Food 3.jpg","12_Flowers 5.jpg","13_Dancing 2.jpg","14_Alcohol 4.jpg","15_Sky 1.jpg","16_Building 2.jpg","17_Gazing 2.jpg","18_Bubble 1.jpg","19_Bird 4.jpg","20_Fire hydrant 4.jpg"],
+      LVHA: ["01_Cat 7.jpg","02_Car accident 3.jpg","03_Dog 31.jpg","04_Baby 7.jpg","05_Shark 10.jpg","06_Dog 23.jpg","07_Snake 4.jpg","08_War 4.jpg","09_Tornado 2.jpg","10_Sad face 2.jpg","11_Gun 10.jpg","12_Soldiers 10.jpg","13_Sad face 1.jpg","14_Gun 7.jpg","15_Snake 3.jpg","16_Gun 2.jpg","17_Snake 5.jpg","18_Police 5.jpg","19_Ferret 1.jpg","20_Fire 10.jpg"],
+      LVLA: ["01_Skinhead 1.jpg","02_Cold 1.jpg","03_Bored pose 5.jpg","04_Angry face 2.jpg","05_Angry face 1.jpg","06_Toilet 3.jpg","07_Sad pose 5.jpg","08_Monkey 3.jpg","09_Storage 3.jpg","10_Sad face 4.jpg","11_Camping 9.jpg","12_Prison 2.jpg","13_Police 4.jpg","14_Plane crash 2.jpg","15_Graveyard 4.jpg","16_Sad face 3.jpg","17_Fence 3.jpg","18_Angry face 5.jpg","19_Depressed pose 4.jpg","20_Graveyard 1.jpg"]
     };
     const QUADRANT_KEYS = ["HVHA", "HVLA", "LVHA", "LVLA"];
 
@@ -536,7 +623,6 @@
     const testSoundBtn = document.getElementById("testSoundBtn");
     const resetBtn = document.getElementById("resetBtn");
     const downloadLogBtn = document.getElementById("downloadLogBtn");
-    const downloadAllocBtn = document.getElementById("downloadAllocBtn");
     const clearLogBtn = document.getElementById("clearLogBtn");
     const durationInput = document.getElementById("durationInput");
     const fadeInput = document.getElementById("fadeInput");
@@ -551,6 +637,12 @@
     const ratingDoneBtn = document.getElementById("ratingDoneBtn");
     const ratingFrame = document.getElementById("ratingFrame");
     const ratingModalTitle = document.getElementById("ratingModalTitle");
+    const memoryModal = document.getElementById("memoryModal");
+    const memoryImage = document.getElementById("memoryImage");
+    const memoryProgress = document.getElementById("memoryProgress");
+    const memoryOldBtn = document.getElementById("memoryOldBtn");
+    const memoryNewBtn = document.getElementById("memoryNewBtn");
+    const memoryUndoBtn = document.getElementById("memoryUndoBtn");
 
     const audio = new Audio(NOTIFY_AUDIO);
     audio.preload = "auto";
@@ -567,6 +659,12 @@
     let modalOpen = false;
     let modalPurpose = null;
     let ratingSavedForCurrentPause = false;
+    let memoryModalOpen = false;
+    let memoryTrials = [];
+    let memoryTrialIndex = 0;
+    let memoryTrialStartMs = 0;
+    let memoryCorrectCount = 0;
+    let memoryResponses = [];
     let seedValue = null;
     let sessionBlocks = [];
     let sessionPointer = 0;
@@ -868,7 +966,7 @@
     }
 
     function updatePresentationMode() {
-      const hideControls = Boolean(currentBlock) && (isPlaying || modalOpen);
+      const hideControls = Boolean(currentBlock) && (isPlaying || modalOpen || memoryModalOpen);
       document.body.classList.toggle("presentation-mode", hideControls);
     }
 
@@ -962,6 +1060,112 @@
       modalPurpose = null;
       modalOpen = false;
       updatePresentationMode();
+    }
+
+    function buildMemoryTrials(block) {
+      if (!block) return [];
+      const shown = block.sampled_image_ids || [];
+      const memorySeed = hashStringToSeed(`${block.random_seed}:${block.quadrant}:${block.true_condition}:${block.is_practice ? "practice" : "main"}:memory`);
+      const memoryRng = createRng(memorySeed);
+      let lureTrials = [];
+
+      if (block.is_practice) {
+        const allMainLures = [];
+        QUADRANT_KEYS.forEach((q) => {
+          MEMORY_LURE_POOLS[q].forEach((file) => {
+            allMainLures.push({ file, base_path: `${memoryLureBasePath}${q}/` });
+          });
+        });
+        const lurePick = shuffledCopy(allMainLures, memoryRng).slice(0, MEMORY_NEW_COUNT);
+        lureTrials = lurePick.map((x) => ({ file: x.file, is_old: false, base_path: x.base_path }));
+      } else {
+        const lurePool = (MEMORY_LURE_POOLS[block.quadrant] || []).slice();
+        if (lurePool.length < MEMORY_NEW_COUNT) return [];
+        lureTrials = shuffledCopy(lurePool, memoryRng).slice(0, MEMORY_NEW_COUNT)
+          .map((file) => ({ file, is_old: false, base_path: `${memoryLureBasePath}${block.quadrant}/` }));
+      }
+
+      if (shown.length < MEMORY_OLD_COUNT || lureTrials.length < MEMORY_NEW_COUNT) return [];
+      const oldPick = shuffledCopy(shown, memoryRng).slice(0, MEMORY_OLD_COUNT);
+      const mixed = oldPick.map((file) => ({ file, is_old: true, base_path: block.image_base_path }))
+        .concat(lureTrials);
+      block.memory_seed = memorySeed;
+      return shuffledCopy(mixed, memoryRng);
+    }
+
+    function renderMemoryTrial() {
+      if (!currentBlock || memoryTrialIndex >= memoryTrials.length) return;
+      const trial = memoryTrials[memoryTrialIndex];
+      const imageBase = trial.base_path || currentBlock.image_base_path || basePath;
+      memoryImage.src = `${imageBase}${encodeURI(trial.file)}`;
+      memoryProgress.textContent = `${memoryTrialIndex + 1} / ${memoryTrials.length}`;
+      memoryTrialStartMs = Date.now();
+    }
+
+    function closeMemoryModal() {
+      if (!memoryModalOpen) return;
+      memoryModal.classList.remove("open");
+      memoryModal.setAttribute("aria-hidden", "true");
+      memoryModalOpen = false;
+      updatePresentationMode();
+    }
+
+    function openMemoryModal() {
+      memoryTrials = buildMemoryTrials(currentBlock);
+      memoryTrialIndex = 0;
+      memoryCorrectCount = 0;
+      memoryResponses = [];
+      if (memoryTrials.length === 0) {
+        logEvent("memory_skipped", { detail: currentBlock?.is_practice ? "practice" : "insufficient_trials" });
+        finalizeBlock();
+        return;
+      }
+      memoryModalOpen = true;
+      memoryModal.classList.add("open");
+      memoryModal.setAttribute("aria-hidden", "false");
+      logEvent("memory_open", { detail: `trials=${memoryTrials.length}` });
+      renderMemoryTrial();
+      updatePresentationMode();
+    }
+
+    function submitMemoryResponse(responseOld) {
+      if (!memoryModalOpen || !currentBlock || memoryTrialIndex >= memoryTrials.length) return;
+      const trial = memoryTrials[memoryTrialIndex];
+      const correct = Boolean(responseOld) === trial.is_old;
+      const rtMs = Date.now() - memoryTrialStartMs;
+      memoryResponses.push({
+        trial_index: memoryTrialIndex + 1,
+        stim: trial.file,
+        is_old: trial.is_old,
+        response_old: Boolean(responseOld),
+        correct,
+        rt_ms: rtMs
+      });
+
+      memoryTrialIndex += 1;
+      if (memoryTrialIndex >= memoryTrials.length) {
+        memoryCorrectCount = memoryResponses.reduce((acc, x) => acc + (x.correct ? 1 : 0), 0);
+        memoryResponses.forEach((x) => {
+          logEvent("memory_trial", {
+            detail: `trial=${x.trial_index};stim=${x.stim};is_old=${x.is_old};response_old=${x.response_old};correct=${x.correct};rt_ms=${x.rt_ms}`
+          });
+        });
+        logEvent("memory_complete", { detail: `correct=${memoryCorrectCount}/${memoryTrials.length}` });
+        closeMemoryModal();
+        finalizeBlock();
+        return;
+      }
+      renderMemoryTrial();
+    }
+
+    function undoMemoryResponse() {
+      if (!memoryModalOpen || memoryTrialIndex === 0) return;
+      if (memoryResponses.length > 0 && memoryResponses.length === memoryTrialIndex) {
+        memoryResponses.pop();
+      }
+      memoryTrialIndex = Math.max(0, memoryTrialIndex - 1);
+      logEvent("memory_undo", { detail: `back_to_trial=${memoryTrialIndex + 1}` });
+      renderMemoryTrial();
     }
 
     function clearTimers() {
@@ -1119,6 +1323,7 @@
     function resetPlayback() {
       clearTimers();
       closeRatingModal();
+      closeMemoryModal();
       isPlaying = false;
       currentIndex = 0;
       remainingMs = 0;
@@ -1140,7 +1345,7 @@
     }
 
     function startPracticeFlow() {
-      if (isPlaying || modalOpen) return;
+      if (isPlaying || modalOpen || memoryModalOpen) return;
       currentSessionDatetime = formatDateTime(new Date());
       currentBlock = generatePracticeBlock();
       assignmentRows.push({
@@ -1162,7 +1367,7 @@
     }
 
     function startNextSessionBlock() {
-      if (isPlaying || modalOpen) return;
+      if (isPlaying || modalOpen || memoryModalOpen) return;
       if (sessionBlocks.length === 0 || sessionPointer >= sessionBlocks.length) {
         generateSessionBlocks();
         const selectedStart = Math.max(0, quadrantSelect.selectedIndex);
@@ -1193,7 +1398,7 @@
         return;
       }
       if (purpose === "post") {
-        finalizeBlock();
+        openMemoryModal();
       }
     }
 
@@ -1227,12 +1432,9 @@
     downloadLogBtn.addEventListener("click", () => {
       logEvent("download_log");
       downloadLogCsv();
-      requestAffectiveCsvExport();
-    });
-
-    downloadAllocBtn.addEventListener("click", () => {
       logEvent("download_assignment");
       downloadAssignmentCsv();
+      requestAffectiveCsvExport();
     });
 
     clearLogBtn.addEventListener("click", () => {
@@ -1242,6 +1444,9 @@
     });
 
     ratingDoneBtn.addEventListener("click", handleRatingModalDone);
+    memoryOldBtn.addEventListener("click", () => submitMemoryResponse(true));
+    memoryNewBtn.addEventListener("click", () => submitMemoryResponse(false));
+    memoryUndoBtn.addEventListener("click", undoMemoryResponse);
 
     ratingFrame.addEventListener("load", () => {
       logEvent("rating_frame_loaded");
@@ -1267,6 +1472,24 @@
       }
       if (event.data.type === "affective-slider-export-empty") {
         logEvent("affective_export_empty");
+      }
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (!memoryModalOpen) return;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        submitMemoryResponse(false);
+        return;
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        submitMemoryResponse(true);
+        return;
+      }
+      if (event.key === "ArrowUp" || event.key === "Backspace") {
+        event.preventDefault();
+        undoMemoryResponse();
       }
     });
 
