@@ -609,6 +609,7 @@
     const RATING_PAGE_VERSION = "20260213-2";
     const NOTIF_BASE_MS = 2500;
     const NOTIF_JITTER_RANGE_MS = 500;
+    const NOTIFICATION_MODAL_DELAY_MS = 1000;
     const MEMORY_OLD_COUNT = 5;
     const MEMORY_NEW_COUNT = 5;
     const UI_LABELS = ["Condition A", "Condition B"];
@@ -1242,13 +1243,10 @@
         logEvent("notification_audio_failed", { detail: String(err) });
       }
       if (played) {
-        const durationMs = Number.isFinite(audio.duration) && audio.duration > 0
-          ? Math.ceil(audio.duration * 1000)
-          : 300;
         setTimeout(() => {
           pausePlayback("notification");
           openRatingModal("notification");
-        }, durationMs + 20);
+        }, NOTIFICATION_MODAL_DELAY_MS);
         return;
       }
       pausePlayback("notification");
