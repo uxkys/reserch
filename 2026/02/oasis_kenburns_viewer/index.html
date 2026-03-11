@@ -360,6 +360,22 @@
       background: #fafbfe;
     }
 
+    .icon-btn {
+      width: 48px;
+      height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 0;
+    }
+
+    .icon-btn svg {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+    }
+
     .memory-overlay {
       position: fixed;
       inset: 0;
@@ -457,7 +473,32 @@
 
       <div class="row">
         <label for="participantIdInput">Participant ID</label>
-        <input id="participantIdInput" type="text" value="P01" />
+        <select id="participantIdInput">
+          <option value="P01" selected>P01</option>
+          <option value="P02">P02</option>
+          <option value="P03">P03</option>
+          <option value="P04">P04</option>
+          <option value="P05">P05</option>
+          <option value="P06">P06</option>
+          <option value="P07">P07</option>
+          <option value="P08">P08</option>
+          <option value="P09">P09</option>
+          <option value="P10">P10</option>
+          <option value="P11">P11</option>
+          <option value="P12">P12</option>
+          <option value="P13">P13</option>
+          <option value="P14">P14</option>
+          <option value="P15">P15</option>
+          <option value="P16">P16</option>
+          <option value="P17">P17</option>
+          <option value="P18">P18</option>
+          <option value="P19">P19</option>
+          <option value="P20">P20</option>
+          <option value="P21">P21</option>
+          <option value="P22">P22</option>
+          <option value="P23">P23</option>
+          <option value="P24">P24</option>
+        </select>
         <label for="seedInput">Seed</label>
         <input id="seedInput" type="number" step="1" placeholder="auto" />
         <label for="excludeUsedToggle">Reuse回避</label>
@@ -533,7 +574,11 @@
         title="Affective Slider"
       ></iframe>
       <div class="modal-footer">
-        <button class="primary" id="ratingDoneBtn" type="button">評定後に再開 / Resume</button>
+        <button class="primary icon-btn" id="ratingDoneBtn" type="button" aria-label="再開">
+          <svg viewBox="0 -960 960 960" aria-hidden="true">
+            <path d="m380-300 280-180-280-180v360Z"/>
+          </svg>
+        </button>
       </div>
     </div>
   </div>
@@ -1030,6 +1075,14 @@
       ratingFrame.src = `${RATING_PAGE_URL}?v=${RATING_PAGE_VERSION}`;
     }
 
+    function syncRatingFrameMode(purpose) {
+      if (!ratingFrame.contentWindow) return;
+      ratingFrame.contentWindow.postMessage({
+        type: "affective-slider-set-mode",
+        mode: purpose || "pre"
+      }, "*");
+    }
+
     function requestAffectiveCsvExport() {
       if (!ratingFrame.contentWindow) return;
       ratingFrame.contentWindow.postMessage({ type: "affective-slider-export-csv" }, "*");
@@ -1047,6 +1100,7 @@
       else ratingModalTitle.textContent = "途中評価を入力してください / In-block rating";
       ratingModal.classList.add("open");
       ratingModal.setAttribute("aria-hidden", "false");
+      syncRatingFrameMode(purpose);
       logEvent("rating_modal_open", { detail: purpose });
       updatePresentationMode();
     }
@@ -1187,12 +1241,14 @@
       } catch (err) {
         logEvent("notification_audio_failed", { detail: String(err) });
       }
-      // Show the questionnaire immediately after notification playback starts.
       if (played) {
+        const durationMs = Number.isFinite(audio.duration) && audio.duration > 0
+          ? Math.ceil(audio.duration * 1000)
+          : 300;
         setTimeout(() => {
           pausePlayback("notification");
           openRatingModal("notification");
-        }, 40);
+        }, durationMs + 20);
         return;
       }
       pausePlayback("notification");
@@ -1449,6 +1505,7 @@
     memoryUndoBtn.addEventListener("click", undoMemoryResponse);
 
     ratingFrame.addEventListener("load", () => {
+      syncRatingFrameMode(modalPurpose || "pre");
       logEvent("rating_frame_loaded");
     });
 

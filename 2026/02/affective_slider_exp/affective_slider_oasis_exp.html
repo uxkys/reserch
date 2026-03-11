@@ -4,11 +4,40 @@
 <meta charset="UTF-8">
 <title>AffectiveSlider</title>
 <style>
+  body {
+    margin: 0;
+    padding: 0 0 84px;
+    background: #fff;
+  }
+
   .emotion-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 64px;
+    margin-top: 40px;
+  }
+
+  .section-copy {
+    width: min(720px, calc(100% - 48px));
+    margin: 18px auto 0;
+    color: #303543;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .section-copy.primary {
+    margin-top: 18px;
+    font-weight: 600;
+  }
+
+  .section-copy.secondary {
+    margin-top: 18px;
+    color: #4a5160;
+    font-weight: 700;
+  }
+
+  .hidden {
+    display: none;
   }
 
   .emotion-icon {
@@ -95,7 +124,7 @@
 
   .actions {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     margin-top: 10px;
   }
 
@@ -120,7 +149,7 @@
 
   .submit-button {
     text-align: center;
-    margin-top: 20px;
+    margin-top: 12px;
   }
 
   .submit-btn {
@@ -132,7 +161,7 @@
     background: #fff;
     position: relative;
     transition: background-color 0.3s, border-color 0.3s, transform 0.12s ease, opacity 0.12s ease;
-    margin-top: 32px;
+    margin-top: 20px;
     user-select: none;
     display: inline-flex;
     align-items: center;
@@ -220,8 +249,10 @@
   <img id="downloadLogButton" src="download_40dp_E8EAED_FILL0_wght400_GRAD0_opsz40.svg" alt="ログのダウンロード">
 </div>
 
+<div class="section-copy secondary hidden" id="stressCopy">通知に対して感じたストレスを入力してください</div>
+
 <!-- 1本目のスライダー: sleep - surprised（arousal） -->
-<div class="emotion-container">
+<div class="emotion-container" id="stressContainer">
   <div class="emotion-slider-group">
     <div class="single-pole-row">
       <span class="single-pole-label left">全く感じていない</span>
@@ -230,6 +261,8 @@
     </div>
   </div>
 </div>
+
+<div class="section-copy primary" id="affectiveCopy">今の感情を入力してください</div>
 
 <!-- 2本目のスライダー: sleep - surprised（arousal） -->
 <div class="emotion-container">
@@ -279,6 +312,9 @@
 const stressSlider = document.getElementById('stress');
 const arousalSlider = document.getElementById('arousal');
 const pleasureSlider = document.getElementById('pleasure');
+const stressContainer = document.getElementById('stressContainer');
+const affectiveCopy = document.getElementById('affectiveCopy');
+const stressCopy = document.getElementById('stressCopy');
 const logList = document.getElementById('logList');
 const resetButton = document.getElementById('resetButton');
 const toggleLogButton = document.getElementById('toggleLogButton');
@@ -292,13 +328,21 @@ let saveLock = false;         // 連打防止（保存処理中フラグ）
 let feedbackTimer = null;     // アニメーション用タイマー
 let touched = { stress: false, arousal: false, pleasure: false };
 let firstInteractionAtMs = null;
+let currentMode = 'pre';
+
+function isStressRequired() {
+  return currentMode === 'notification';
+}
 
 function setSaveEnabled(enabled) {
   submitButton.disabled = !enabled;
 }
 
 function canSave() {
-  return touched.stress && touched.arousal && touched.pleasure;
+  if (isStressRequired()) {
+    return touched.stress && touched.arousal && touched.pleasure;
+  }
+  return touched.arousal && touched.pleasure;
 }
 
 function markTouched(key) {
@@ -307,6 +351,24 @@ function markTouched(key) {
     firstInteractionAtMs = Date.now();
   }
   setSaveEnabled(canSave());
+}
+
+function resetSlidersForMode() {
+  stressSlider.value = 50;
+  arousalSlider.value = 50;
+  pleasureSlider.value = 50;
+  touched = { stress: false, arousal: false, pleasure: false };
+  firstInteractionAtMs = null;
+  hideThumbs();
+  setSaveEnabled(false);
+}
+
+function applyMode(mode) {
+  currentMode = mode === 'notification' ? 'notification' : mode === 'post' ? 'post' : 'pre';
+  stressContainer.classList.toggle('hidden', !isStressRequired());
+  stressCopy.classList.toggle('hidden', !isStressRequired());
+  affectiveCopy.textContent = '今の感情を入力してください';
+  resetSlidersForMode();
 }
 
 // Hide both thumbs until the user interacts again.
@@ -391,7 +453,7 @@ function addLogEntry() {
 
   const arousalValue = arousalSlider.value;    // arousal スライダーの値
   const pleasureValue = pleasureSlider.value;  // pleasure スライダーの値
-  const stressValue = stressSlider.value;      // stress スライダーの値
+  const stressValue = isStressRequired() ? stressSlider.value : '';
   const currentTime = new Date();              // タイムスタンプ
   const nowMs = Date.now();
 
@@ -417,15 +479,8 @@ function addLogEntry() {
   flashSaveButton();
 
   // スライダーを中央に戻す
-  stressSlider.value = 50;
-  arousalSlider.value = 50;
-  pleasureSlider.value = 50;
-  hideThumbs();
-
-  touched = { stress: false, arousal: false, pleasure: false };
   const sliderRtMs = firstInteractionAtMs === null ? null : (nowMs - firstInteractionAtMs);
-  firstInteractionAtMs = null;
-  setSaveEnabled(false);
+  resetSlidersForMode();
 
   // 連打防止解除（短時間だけ無効化して二重保存を物理的に防ぐ）
   setTimeout(() => {
@@ -439,7 +494,7 @@ function addLogEntry() {
       type: 'affective-slider-saved',
       payload: {
         response: {
-          stress: Number(stressValue),
+          stress: stressValue === '' ? null : Number(stressValue),
           arousal: Number(arousalValue),
           pleasure: Number(pleasureValue)
         },
@@ -496,10 +551,8 @@ resetButton.onclick = function() {
   updateLogDisplay();    // 表示をクリア
   lastLogTimestamp = ''; // タイムスタンプをリセット
   touched = { stress: false, arousal: false, pleasure: false };
-  firstInteractionAtMs = null;
   pulseElement(resetButton);
-  hideThumbs();
-  setSaveEnabled(false);
+  resetSlidersForMode();
 };
 
 // ログのダウンロードボタン
@@ -515,12 +568,16 @@ downloadLogButton.onclick = function() {
 // saveアイコンが押されたときにログを記録し、スライダーをリセット
 submitButton.onclick = addLogEntry;
 
-// Initial state: hide thumbs until the user interacts.
-hideThumbs();
-setSaveEnabled(false);
+// Initial state: mode-specific reset.
+applyMode('pre');
 
 window.addEventListener('message', (event) => {
-  if (!event.data || event.data.type !== 'affective-slider-export-csv') return;
+  if (!event.data || !event.data.type) return;
+  if (event.data.type === 'affective-slider-set-mode') {
+    applyMode(event.data.mode || 'pre');
+    return;
+  }
+  if (event.data.type !== 'affective-slider-export-csv') return;
   if (logEntries.length === 0) {
     if (window.parent && window.parent !== window) {
       window.parent.postMessage({ type: 'affective-slider-export-empty' }, '*');
