@@ -1234,6 +1234,7 @@
       if (!currentBlock || !isPlaying || !showingImage || currentBlock.notificationFired) return;
       currentBlock.notificationFired = true;
       logEvent("notification_onset");
+      pausePlayback("notification");
       let played = false;
       try {
         audio.currentTime = 0;
@@ -1244,12 +1245,10 @@
       }
       if (played) {
         setTimeout(() => {
-          pausePlayback("notification");
           openRatingModal("notification");
         }, NOTIFICATION_MODAL_DELAY_MS);
         return;
       }
-      pausePlayback("notification");
       openRatingModal("notification");
     }
 
